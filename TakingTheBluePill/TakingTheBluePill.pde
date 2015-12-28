@@ -6,14 +6,14 @@ float damp = .5;
 float res = 10;
 float max_time = 5;
 float speed2 = speed;
-float level = 10;
+float level = 20;
 void setup() {
   size(1280,720);
   background(0);
 }
 
 void drawEllipse(float level){
-  ellipse(0,0, 500/level, 500/level);
+  ellipse(0,0, 500/level*.1*pow(time,1.0/3.0), 500/level*.1*pow(time,1.0/3.0));
   if (level > 0){
     level -= 1;
     drawEllipse(level);
@@ -27,11 +27,11 @@ void draw(){
   rect(0,0, 1280,720);
   pushMatrix();
   translate(640, 400);
-  scale(.02*time+.06*time*time);
-  rotate(.2*time + .5*time*time);
+  scale(0.01*time+1.0*pow(time,1.0/3.0));
+  rotate(0.01*time + 1.0*pow(time, 1.0/2.0));
   noFill();
-  stroke(255-20*time, 255-20*time, 255);
-  strokeWeight(.5+.2*time);
+  stroke(255-10*time, 255-10*time, 255);
+  strokeWeight(.5+.01*time);
   //noStroke();
   //smooth(20);
   beginShape();
@@ -42,7 +42,7 @@ void draw(){
   endShape();
   popMatrix();
   translate(640, 400);
-  scale(.009*time2+.01*time*time + .001*time2*time2);
+  scale(0.1*time2+.01*pow(time,1.0/3.0)+ 1*pow(time2,1.0/3.0));
   //rotate(.2*time + .5*time*time);
   //ellipse(0,0,500,500);
   drawEllipse(level);
@@ -67,5 +67,5 @@ void draw(){
   //if (time2 % max_time == 0){
   //  level = 2;
   //}
-  
+  //saveFrame();
 }

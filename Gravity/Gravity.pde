@@ -143,11 +143,14 @@ void setup() {
   println(bodies[1].position.x);
   println(bodies[2].position.x);
   println(PVector.dist(bodies[1].position, bodies[2].position));
-  for (int i = 3; i < 20; i++){
+  for (int i = 3; i < bodies.length; i++){
     Body binit = new Body(new PVector(0.0,0.0), new PVector(0.0,0.0),0.0, EarthColor);
     genRandMass(binit);
     genRandPosition(binit);
     genRandVelocity(bodies[0],binit);
+    bodies[i] = binit;
+    println(binit.mass);
+    println(binit.position);
     println(binit.velocity);
   }
   
@@ -204,4 +207,5 @@ void draw() {
     
   }
   increment += 1;
+  //saveFrame();
 }

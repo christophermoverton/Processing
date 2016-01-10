@@ -1,8 +1,10 @@
-
+float bfillA = 1.0;
+float nbfillA = 1.0;
+float angle = -.5;
 int NGONs1 = 3;
 int NGONs2 = 7;
-float RNG1 = 300;
-float RNG2 = 300;
+float RNG1 = 50;
+float RNG2 = 150;
 PVector[] NG1pos = new PVector[NGONs1];
 PVector[] NG2pos = new PVector[NGONs2];
 PVector[] ng1posf;
@@ -17,6 +19,8 @@ float rtime = 2.0; // (rest time in seconds)
 boolean t3 = false; //controls animation cycle
 boolean shape = true;  //controls destination animation shape
 // recursive implementation of gcd
+float maxAngle = 120.0;
+int TopLevel = 20;
 int gcd(int p, int q) {
   if (q == 0) {return p;}
   else {return gcd(q, p % q);}
@@ -141,12 +145,13 @@ void updatePosPoints(PVector[] pos, PVector[] itop){
   }
 }
 
-void recurDraw(int Level){
-  fill(int((70.0-Level)/70.0*255.0), int(nbfillA*(70.0-Level)/70.0*255.0));
-  ellipse(0,0,50.0,15.0);
+void recurDraw(int Level, PShape s){
+  //fill(int((70.0-Level)/70.0*255.0), int(nbfillA*(70.0-Level)/70.0*255.0));
+  //ellipse(0,0,50.0,15.0);
+  shape(s, 0,0);
   //stroke(255);
   //strokeWeight(1);
-  noStroke();
+  //noStroke();
   
   //noFill();
   if (Level > 0){
@@ -155,29 +160,30 @@ void recurDraw(int Level){
     //float y = 0;
     //Polarcoord(angle, 100.0, x, y);
     translate(0.0,50.0);
-    scale(.95);
+    scale(.85);
     rotate(angle);
-    recurDraw(Level);
+    recurDraw(Level, s);
   }
 }
 
-void bigRecurDraw(int Level, float iangle){
+void bigRecurDraw(int Level, float iangle, PShape s){
   pushMatrix();
   rotate(iangle);
   float x = 0.0;
   float y = 0.0;
-  Polarcoord(angle, 50.0, x, y);
-  translate(x,y);
-  recurDraw(70);
+  PVector xy = new PVector(x,y,0.0);
+  Polarcoord(iangle, 300.0, xy);
+  translate(xy.x,xy.y);
+  recurDraw(int(TopLevel), s);
   popMatrix();
   if (Level > 0){
     Level -= 1;
-    iangle += PI/15.0;
+    iangle += 1.0*PI/float(int(TopLevel/2.0));
     nbfillA -= 1/70.0;
     if (nbfillA < 0){
       nbfillA = 0.0;
     }
-    bigRecurDraw(Level, iangle);
+    bigRecurDraw(Level, iangle, s);
     
   }
 }
@@ -187,9 +193,10 @@ PVector[] pos;
 PVector[] itop;
 PShape s;
 void draw(){
-  background(0);
+  background(0, 8);
   translate(1280.0/2.0, 720.0/2.0);
-  
+  rotate(2*angle*.01);
+  //scale(angle);
   //rotate(PI/4.0);
   //shape(s1,0,0);
   //shape(s2,0,0);
@@ -198,7 +205,8 @@ void draw(){
   if (t2){
     //set destination shape
     if (shape){
-      NGONs2 = int(random(3,14));
+      NGONs2 = int(random(3,10));
+      RNG2 = random(5,100);
       NG2pos = new PVector[NGONs2];
       getNGonPoints(NGONs2, RNG2, NG2pos);
       ng12lcm = lcm(NGONs1, NGONs2);
@@ -219,8 +227,9 @@ void draw(){
     }
     else{
       //println("Hit shape2!");
-      NGONs1 = int(random(3,14));
+      NGONs1 = int(random(3,10));
       NG1pos = new PVector[NGONs1];
+      RNG1 = random(5,100);
       getNGonPoints(NGONs1, RNG1, NG1pos);
       ng12lcm = lcm(NGONs1, NGONs2);
       ng1posf = new PVector[ng12lcm];
@@ -248,22 +257,33 @@ void draw(){
     }
   }
   if (stopacycle != true) {
-    println("pos:", pos);
-    println("Itop: ", itop);
+    //println("pos:", pos);
+    //println("Itop: ", itop);
     updatePosPoints(pos, itop);
-    println("hitting stop acycle!");
+    //println("hitting stop acycle!");
     s = createShape();
     createNGon(pos, s);
   }
   //rotate(time*.01);
-  shape(s,0.0,0.0);
-  int j = 1;
-  while (j < 30){
-    scale(.85);
-    shape(s,0.0,0.0);
-    j+= 1;
+  int k = 1;
+  while (k < 5){
+      bigRecurDraw(int(TopLevel/2.0), 0.0, s);
   }
+  if (angle > maxAngle){
+    speed = -1*speed;
+  }
+  else if (angle <-1*maxAngle){
+    speed = -1*speed;
+  }
+  angle += speed*.05;
+  //shape(s,0.0,0.0);
+  //int j = 1;
+  //while (j < 30){
+  //  scale(.85);
+  //  shape(s,0.0,0.0);
+  //  j+= 1;
+  //}
   time += speed;
-  println(time);
+  //println(time);
   //saveFrame();
 }

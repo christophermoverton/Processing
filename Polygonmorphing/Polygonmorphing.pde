@@ -1,8 +1,8 @@
 
 int NGONs1 = 3;
 int NGONs2 = 7;
-float RNG1 = 120;
-float RNG2 = 120;
+float RNG1 = 300;
+float RNG2 = 300;
 PVector[] NG1pos = new PVector[NGONs1];
 PVector[] NG2pos = new PVector[NGONs2];
 PVector[] ng1posf;
@@ -12,8 +12,8 @@ PShape s1;
 PShape s2;
 float speed = 1.0; 
 float time = 0.0;
-float atime = 4.0; //(animation time in seconds)
-float rtime = 4.0; // (rest time in seconds)
+float atime = 2.0; //(animation time in seconds)
+float rtime = 2.0; // (rest time in seconds)
 boolean t3 = false; //controls animation cycle
 boolean shape = true;  //controls destination animation shape
 // recursive implementation of gcd
@@ -156,9 +156,8 @@ void draw(){
   boolean t2 = (time) % (rtime*24.0 + atime*24.0) == 0; //start of rest cycle
   if (t2){
     //set destination shape
-    itop = new PVector[ng12lcm];
     if (shape){
-      NGONs2 = int(random(3,20));
+      NGONs2 = int(random(3,14));
       NG2pos = new PVector[NGONs2];
       getNGonPoints(NGONs2, RNG2, NG2pos);
       ng12lcm = lcm(NGONs1, NGONs2);
@@ -168,6 +167,7 @@ void draw(){
       int s2f = ng12lcm/NGONs2;
       getNGonSubdivisionPoints(s1f, NG1pos, ng1posf);
       getNGonSubdivisionPoints(s2f, NG2pos, ng2posf);
+      itop = new PVector[ng12lcm];
       //shape 2 is destination
       getITOP(ng1posf, ng2posf, itop, atime);
       pos = ng1posf.clone();
@@ -178,7 +178,7 @@ void draw(){
     }
     else{
       //println("Hit shape2!");
-      NGONs1 = int(random(3,20));
+      NGONs1 = int(random(3,14));
       NG1pos = new PVector[NGONs1];
       getNGonPoints(NGONs1, RNG1, NG1pos);
       ng12lcm = lcm(NGONs1, NGONs2);
@@ -188,6 +188,7 @@ void draw(){
       int s2f = ng12lcm/NGONs2;
       getNGonSubdivisionPoints(s1f, NG1pos, ng1posf);
       getNGonSubdivisionPoints(s2f, NG2pos, ng2posf);
+      itop = new PVector[ng12lcm];
       getITOP(ng2posf, ng1posf, itop, atime);
       pos = ng2posf.clone();
       s = createShape();
@@ -213,7 +214,15 @@ void draw(){
     s = createShape();
     createNGon(pos, s);
   }
+  //rotate(time*.01);
   shape(s,0.0,0.0);
+  int j = 1;
+  while (j < 30){
+    scale(.85);
+    shape(s,0.0,0.0);
+    j+= 1;
+  }
   time += speed;
   println(time);
+  //saveFrame();
 }

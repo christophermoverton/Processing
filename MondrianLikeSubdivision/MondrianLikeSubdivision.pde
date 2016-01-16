@@ -145,7 +145,7 @@ void draw() {
       rasterLines.append(y5);
     }
   }
-  saveFrame();
+  //saveFrame();
 }
 
 void drawLines(int level, float x1, float y1, float x2, float y2, FloatList c2, float boundary, boolean eqsub){

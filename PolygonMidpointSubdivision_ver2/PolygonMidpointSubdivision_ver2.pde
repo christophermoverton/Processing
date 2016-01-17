@@ -1,13 +1,14 @@
 //Polygon MidPoint Subdivision
+//Pentagonal Rule Subdivision
 //
-int NGONs1 = 3;
+int NGONs1 = 5;
 float RNG1 = 300;
 PVector[] NG1pos = new PVector[NGONs1];
-int SubDivLevel = 5;
+int SubDivLevel = 4;
 float speed = 1.0; 
 float time = 0.0;
 float atime = 2.0; //(animation time in seconds)
-float frac = .40; //fractional size realtionship of subdivision
+float frac = .30; //fractional size realtionship of subdivision
 PShape s1;
 
 ArrayList<Polygon> polygons = new ArrayList<Polygon>();
@@ -162,13 +163,13 @@ void Subdivide(ArrayList<ArrayList<Polygon>> pfam, float atime, float frac){
       npolys.add(npoly);
     }
     PVector[] intPoly2 = new PVector[intPoly.size()];
-    for (int j = 1; j<intPoly.size(); j++){
+    for (int j = 0; j<intPoly.size(); j++){
       intPoly2[j] = intPoly.get(j);
     }
-    //PVector npolycenter = new PVector(0.0,0.0,0.0);
-    //PolygonCentroid(intPoly, npolycenter);
-    //Polygon npoly = new Polygon(intPoly,npolycenter); 
-    //npolys.add(npoly);
+    PVector npolycenter = new PVector(0.0,0.0,0.0);
+    PolygonCentroid(intPoly2, npolycenter);
+    Polygon npoly = new Polygon(intPoly2,npolycenter); 
+    npolys.add(npoly);
     //pass to add existing polygon spoke data
     for (int j = 1; j < subdverts.length; j+=2){
       PVector pos2 = subdverts[j];
@@ -319,4 +320,5 @@ void draw(){
   for (int i = 0; i < shapeslist.size(); i++){
     shape(shapeslist.get(i),0.0,0.0);
   }
+  saveFrame();
 }

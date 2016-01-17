@@ -1,13 +1,13 @@
 //Polygon MidPoint Subdivision
 //
-int NGONs1 = 6;
+int NGONs1 = 3;
 float RNG1 = 300;
 PVector[] NG1pos = new PVector[NGONs1];
 int SubDivLevel = 2;
 float speed = 1.0; 
 float time = 0.0;
-float atime = 3.0; //(animation time in seconds)
-float frac = .30; //fractional size realtionship of subdivision
+float atime = 2.0; //(animation time in seconds)
+float frac = .40; //fractional size realtionship of subdivision
 PShape s1;
 
 ArrayList<Polygon> polygons = new ArrayList<Polygon>();
@@ -107,7 +107,7 @@ void PolygonCentroid(PVector[] verts, PVector PCenter){
   PCenter.y = Cy;
 }
 
-void Subdivide(ArrayList<ArrayList<Polygon>> pfam, float atime){
+void Subdivide(ArrayList<ArrayList<Polygon>> pfam, float atime, float frac){
   ArrayList<Polygon> npolys = new ArrayList<Polygon>(); // next polygon subdiv level 
   ArrayList<Polygon> cpolys = pfam.get(pfam.size()-1); //current polygons subdiv level
   for (int i = 0; i < cpolys.size(); i++){
@@ -136,11 +136,24 @@ void Subdivide(ArrayList<ArrayList<Polygon>> pfam, float atime){
       else{
         nvert = subdverts[j+1];
       }
-      PVector[] npolyverts = new PVector[4];
+      PVector cp = PVector.sub(pvert,cpolycenter);
+      float cpmag = cp.mag();
+      cpmag *= frac;
+      cp.normalize();
+      cp = PVector.mult(cp,cpmag);
+      PVector p2 = PVector.add(cp, cpolycenter);
+      PVector cn = PVector.sub(nvert,cpolycenter);
+      float cnmag = cn.mag();
+      cnmag *= frac;
+      cn.normalize();
+      cn = PVector.mult(cn,cnmag);
+      PVector p1 = PVector.add(cn, cpolycenter);
+      PVector[] npolyverts = new PVector[5];
       npolyverts[0] = pvert;
       npolyverts[1] = cvert;
       npolyverts[2] = nvert;
-      npolyverts[3] = cpolycenter;
+      npolyverts[3] = p1;
+      npolyverts[4] = p2;
       PVector npolycenter = new PVector(0.0,0.0,0.0);
       PolygonCentroid(npolyverts, npolycenter);
       Polygon npoly = new Polygon(npolyverts,npolycenter);
@@ -198,7 +211,7 @@ void setup() {
   PFamily.add(polygons);
   int i = 0;
   while (i < SubDivLevel){
-    Subdivide(PFamily, atime);
+    Subdivide(PFamily, atime, frac);
     i++;
   }
 }
@@ -267,9 +280,7 @@ void draw(){
         shapeslist.add(s2);
       }
     }
-    for (int i = 0; i < shapeslist.size(); i++){
-      shape(shapeslist.get(i),0.0,0.0);
-    }
+
     if(nextLevel){
       for (int i = 0; i < polys.size(); i++){
         Polygon poly = polys.get(i);
@@ -280,7 +291,7 @@ void draw(){
           PVector p1 = PVector.add(spvector, poly.center);
           PVector[] ptpair = new PVector[2];
           ptpair[0] = p1;
-          ptpair[1] = poly.center;
+          ptpair[1] = poly.p2s.get(j);
           linelist.add(ptpair);
           //line(p1.x,p1.y,poly.center.x,poly.center.y);
           //stroke(255);
@@ -294,5 +305,8 @@ void draw(){
       }
       nextLevel = false;
     }
+  }
+  for (int i = 0; i < shapeslist.size(); i++){
+    shape(shapeslist.get(i),0.0,0.0);
   }
 }

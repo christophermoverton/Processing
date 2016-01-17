@@ -3,7 +3,7 @@
 int NGONs1 = 3;
 float RNG1 = 300;
 PVector[] NG1pos = new PVector[NGONs1];
-int SubDivLevel = 2;
+int SubDivLevel = 5;
 float speed = 1.0; 
 float time = 0.0;
 float atime = 2.0; //(animation time in seconds)
@@ -119,6 +119,7 @@ void Subdivide(ArrayList<ArrayList<Polygon>> pfam, float atime, float frac){
     //for (int j = 0; j < cpolyverts.length; j++){
     getNGonSubdivisionPoints(2, cpolyverts, subdverts);
     //}
+    ArrayList<PVector> intPoly = new ArrayList<PVector>();
     //next pass to get polygon vertices and center
     for (int j = 0; j < subdverts.length; j+=2){
       PVector nvert;  //next vertex (clockwise from existing vertex)
@@ -154,11 +155,20 @@ void Subdivide(ArrayList<ArrayList<Polygon>> pfam, float atime, float frac){
       npolyverts[2] = nvert;
       npolyverts[3] = p1;
       npolyverts[4] = p2;
+      intPoly.add(p1);
       PVector npolycenter = new PVector(0.0,0.0,0.0);
       PolygonCentroid(npolyverts, npolycenter);
       Polygon npoly = new Polygon(npolyverts,npolycenter);
       npolys.add(npoly);
     }
+    PVector[] intPoly2 = new PVector[intPoly.size()];
+    for (int j = 1; j<intPoly.size(); j++){
+      intPoly2[j] = intPoly.get(j);
+    }
+    //PVector npolycenter = new PVector(0.0,0.0,0.0);
+    //PolygonCentroid(intPoly, npolycenter);
+    //Polygon npoly = new Polygon(intPoly,npolycenter); 
+    //npolys.add(npoly);
     //pass to add existing polygon spoke data
     for (int j = 1; j < subdverts.length; j+=2){
       PVector pos2 = subdverts[j];

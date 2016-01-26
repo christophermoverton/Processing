@@ -1,14 +1,14 @@
 //Polygon MidPoint Subdivision
 //Pentagonal Rule Subdivision
 //
-int NGONs1 = 5;
-float RNG1 = 300;
+int NGONs1 = 3; //number of polygon sides
+float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 PVector[] NG1pos = new PVector[NGONs1];
-int SubDivLevel = 4;
+int SubDivLevel = 1;
 float speed = 1.0; 
 float time = 0.0;
-float atime = 2.0; //(animation time in seconds)
-float frac = .30; //fractional size realtionship of subdivision
+float atime = 1.0; //(animation time in seconds)
+float frac = .30; //fractional size realtionship of subdivision value greater than 0  and <= 1
 PShape s1;
 
 ArrayList<Polygon> polygons = new ArrayList<Polygon>();
@@ -18,10 +18,10 @@ class Polygon{
   PVector center;
   PVector[] spokes; //these are PVectors from Polygon center to subdivision point (B-A)
   float[] spokescalars;   // animation scalar increment value
-  PVector[] spokenorms;  // normal vectors used in computing animation position 
-  float[] sincvals;  //  current spoke increment scalar values on animation cycle 
-  ArrayList<PVector> intpolypoints; //interior polygon points for Pshape rendering
-  ArrayList<PVector> p2s;  //points originating on the interior polygon boundaries
+  PVector[] spokenorms;  // normal vectors used in computing animation position... unit vectors in the direction of the spoke
+  float[] sincvals;  //  current spoke scalar 'distance' values on animation cycle 
+  ArrayList<PVector> intpolypoints; //interior polygon points for Pshape rendering...the same as p2s...no difference... deprecated at the moment...
+  ArrayList<PVector> p2s;  //points originating on the smallest interior polygon boundaries
   
   Polygon(PVector[] verts, PVector PCent){
     vertices = verts;
@@ -41,13 +41,13 @@ class Polygon{
 void Polarcoord(float angle, float radius, PVector xy){
   xy.x = radius*cos(angle);
   xy.y = radius*sin(angle);
- 
+   //changes to xy extend outside of method/function call since it is wrapped in a container that is call by reference like...
 }
 
 void getNGonPoints(int nside, float radius, PVector[] pos){
-  float ainc = 2.0*PI/float(nside);
+  float ainc = 2.0*PI/float(nside);  //generates equal angle subidivison for Ngon creation
   float a = -PI/2.0;
-  if (nside % 2 == 0){
+  if (nside % 2 == 0){  //checks for polygon side eveness versus oddness
     a += ainc/2.0;
   }
   for (int i = 0; i < nside; i++){
@@ -110,7 +110,7 @@ void PolygonCentroid(PVector[] verts, PVector PCenter){
 
 void Subdivide(ArrayList<ArrayList<Polygon>> pfam, float atime, float frac){
   ArrayList<Polygon> npolys = new ArrayList<Polygon>(); // next polygon subdiv level 
-  ArrayList<Polygon> cpolys = pfam.get(pfam.size()-1); //current polygons subdiv level
+  ArrayList<Polygon> cpolys = pfam.get(pfam.size()-1); // last current polygons subdiv level
   for (int i = 0; i < cpolys.size(); i++){
     Polygon cpoly = cpolys.get(i);
     PVector[] cpolyverts = cpoly.vertices;
@@ -194,7 +194,7 @@ void createNGon(PVector[] pos, PShape s){
     s.vertex(pos[i].x, pos[i].y);
   }
   s.stroke(255);
-  s.strokeWeight(2);
+  s.strokeWeight(.5);
   s.noFill();
   s.endShape(CLOSE);
 }
@@ -205,7 +205,7 @@ void createNGon(ArrayList<PVector> pos, PShape s){
     s.vertex(pos.get(i).x, pos.get(i).y);
   }
   s.stroke(255);
-  s.strokeWeight(2);
+  s.strokeWeight(.5);
   s.noFill();
   s.endShape(CLOSE);
 }
@@ -240,6 +240,7 @@ ArrayList<PShape> shapeslist = new ArrayList<PShape>();
 void draw(){
   background(0);
   translate(1080.0/2.0, 720.0/2.0);
+  //scale(1.0+time*.01);
   shape(s1,0.0,0.0);
   for (int i = 0; i < linelist.size(); i++){
     PVector[] ptpair = linelist.get(i);
@@ -247,7 +248,7 @@ void draw(){
     PVector p2 = ptpair[1];
     line(p1.x,p1.y,p2.x,p2.y);
     stroke(255);
-    strokeWeight(2);      
+    strokeWeight(.5);      
   }
   if (continueAnim){
 
@@ -270,7 +271,7 @@ void draw(){
         
         line(p1.x,p1.y,poly.p2s.get(j).x,poly.p2s.get(j).y);
         stroke(255);
-        strokeWeight(2);
+        strokeWeight(.5);
         poly.sincvals[j] += spscalars[j];
         if (poly.sincvals[j] >= spscalars[j]*(atime*60)){
           nextLevel = true;
@@ -320,5 +321,6 @@ void draw(){
   for (int i = 0; i < shapeslist.size(); i++){
     shape(shapeslist.get(i),0.0,0.0);
   }
-  saveFrame();
+  time += speed;
+  //saveFrame();
 }

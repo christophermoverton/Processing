@@ -280,17 +280,44 @@ void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out,
   //}
 } //finished getNGonSubdivisionPoints overloaded method
 
+void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out){
+  //println("Pos length: ", pos.length);
+  
+  //for (int i=0; i< iterval; i++){
+  //  int ni = i+1;
+  //  if (i == pos.length -1){
+  //    ni = 0;
+  //  }
+  PVector pos1 = cedge.p1;
+  PVector pos2 = cedge.p2;
+  //using vector approach in subdividing points.
+  PVector p12 = PVector.sub(pos2,pos1);
+  float mp12 = p12.mag();
+  p12.normalize();
+  mp12 /= float(sdf);
+  p12 = PVector.mult(p12, mp12);
+  //println("P12: ", p12);
+  PVector newpos = pos1;
+  //vRemapOut.put(cedge.p1index, out.size());
+  for (int j=0; j < sdf; j++){
+    //int ind = (sdf)*i + j;
+    out.add(newpos);
+    newpos = PVector.add(newpos,p12);
+  }
+  //}
+} //finished getNGonSubdivisionPoints overloaded method
+
 void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
   if (cpoly.vertices.size() == 3){
     for (int i = 0; i < cpoly.vertices.size();i++){
       float ni = (i+1) % cpoly.vertices.size();
       //vector in the direction of the vertex from center
-      PVector cv = PVector.sub(cpoly.center, cpoly.vertices.get(i));
+      PVector cv = PVector.sub(cpoly.vertices.get(i),cpoly.center);
       float dcv = cv.mag();
       dcv *= frac;
       cv.normalize();
       //CentroidCircle position is then given by 
-      PVector centCircle = PVector.add(cpoly.vertices.get(i),PVector.mult(cv,dcv));
+      PVector centCircle = PVector.add(cpoly.center,PVector.mult(cv,dcv));
       //find the radius from centroidCircle...
       //There are 2 conditions in producing such radius.  
       // 1) is given by the nearest distance from a point to line
@@ -312,15 +339,50 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
         d = distPointToCircle(edge.circle, centCircle);
       }
       float radius = d*(1-frac);
-      out.add(new Circle(centCircle, radius);
+      out.add(new Circle(centCircle, radius));
     }
   }
   else if (cpoly.vertices.length == 4){
-    for (int i = 0; i < cpoly.vertices.size();i++){
-      float ni = (i+1) % cpoly.vertices.size();
+    for (int i = 0; i < cpoly.edges.size();i++){
+      if (cpoly.edges.get(i).thick){
+        ArrayList<PVector> pts = new ArrayList<PVector>();
+        if (cpoly.edges.get(i).linear){
+          getNGonSubdivisionPoints(2, cpoly.edges.get(i), pts);
+        }
+        else{
+          getCurveSubdivisionPoints(2, cpoly.edges.get(i), pts);
+        }
+        
+        PVector cv = PVector.sub(pts.get(1),cpoly.center);
+        float dcv = cv.mag();
+        dcv *= frac;
+        cv.normalize();
+        //CentroidCircle position is then given by 
+        PVector centCircle = PVector.add(cpoly.center,PVector.mult(cv,dcv));
+        float d;
+        if (cpoly.edges.get(i).linear){
+          d = distPointToLine(cpoly.edges.get(i).p1,cpoly.edges.get(i).p2,centCircle);
+        }
+        else{
+          
+          d = distPointToCircle(cpoly.edges.get(i).circle, centCircle);
+        }
+        float radius = d*(1-frac);
+        out.add(new Circle(centCircle, radius));  
+      }
     }
   }
   else if (cpoly.vertices.length >= 5){
+    float d;
+    if (cpoly.edges.get(0).linear){
+      d = distPointToLine(cpoly.edges.get(0).p1,cpoly.edges.get(0).p2,cpoly.center);
+    }
+    else{
+      
+      d = distPointToCircle(cpoly.edges.get(0).circle, cpoly.center);
+    }
+    float radius = d*(1-frac);
+    out.add(new Circle(cpoly.center, radius)); 
   }
 }
 
@@ -330,6 +392,20 @@ void getCurveSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out,
   float p1p2angleinc = p1p2angle/float(sdf);
   float cangle = cedge.angle1;
   vRemapOut.put(cedge.p1index, out.size());
+  for (int i =0; i < sdf; i++){
+    PVector pos = new PVector(0.0,0.0,0.0);
+    Polarcoord(cangle, cedge.genR, pos);
+    pos = PVector.add(pos, cedge.genCenter);
+    out.add(pos);
+    cangle += p1p2angleinc;
+  }
+}
+
+void getCurveSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out){
+  float p1p2angle = cedge.angle2 - cedge.angle1;
+  float p1p2angleinc = p1p2angle/float(sdf);
+  float cangle = cedge.angle1;
+  //vRemapOut.put(cedge.p1index, out.size());
   for (int i =0; i < sdf; i++){
     PVector pos = new PVector(0.0,0.0,0.0);
     Polarcoord(cangle, cedge.genR, pos);

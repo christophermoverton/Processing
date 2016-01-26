@@ -159,6 +159,15 @@ float distPointToCircle(Circle ccircle, PVector p, PVector out){
   return mindist;
 }
 
+float distPointToCircle(Circle ccircle, PVector p){
+  PVector pc = PVector.sub(p,ccircle.center);
+  pc.normalize();
+  pc = PVector.mult(pc,ccircle.radius);
+  PVector k = PVector.add(ccircle.center,pc);
+  PVector kp = PVector.sub(k,p);
+  return kp.mag();
+}
+
 void PolygonCentroid(ArrayList<PVector> verts, PVector PCenter){
   float Cx = 0.0;
   float Cy = 0.0;
@@ -299,14 +308,17 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
         d = distPointToLine(edge.p1,edge.p2,centCircle);
       }
       else{
-        PVector ptOnCurve = new PVector(0.0,0.0,0.0);
-        d = distPointToCircle(edge.circle, centCircle, ptOnCurve);
+        
+        d = distPointToCircle(edge.circle, centCircle);
       }
       float radius = d*(1-frac);
       out.add(new Circle(centCircle, radius);
     }
   }
   else if (cpoly.vertices.length == 4){
+    for (int i = 0; i < cpoly.vertices.size();i++){
+      float ni = (i+1) % cpoly.vertices.size();
+    }
   }
   else if (cpoly.vertices.length >= 5){
   }

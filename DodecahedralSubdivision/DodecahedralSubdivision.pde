@@ -427,31 +427,71 @@ void setArcincs(Polygon cpoly, float atime){
   }
 }
 
+void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts, 
+                          HashMap<Integer,Integer> vertsRemap,
+                          HashMap<ArrayList<Integer>,Circle> circlesout){
+  Collection<Integer> flaggedVerts = vertsRemap.values();
+  ArrayList<ArrayList<Integer>> complVertPairs = new ArrayList<ArrayList<Integer>>();
+  for (int i = 0; i < subdivpts.size(); i++){
+    ArrayList<Integer> complpair = new ArrayList<Integer>();
+    if (flaggedVerts.contains(i)){
+      continue;  //skip original polygon vertex (prior to subidivision)
+    }
+    //else 
+    int ni, pi;
+    if (cpoly.vertices.size() >= 5){
+      ni = i+4 % subdivpts.size();
+      pi = i-4 % subdivpts.size();
+    }
+    else{
+      ni = i+3 % subdivpts.size();
+      pi = i-3 % subdivpts.size();
+    }
+    //vert pair test to see if Arc already computed on previous pair set for a
+    // given vertex iteration  if true for set inclusion, continue again.
+    complpair.add(pi);
+    complpair.add(i);
+    if (complVertPairs.contains(complpair)){
+      continue;  //we've already computed an arc for the present iterated vertex index i.
+    }
+    complpair = new ArrayList<Integer>();
+    PVector Centerout = new PVector(0.0,0.0,0.0);
+    getCircleCenter(subdivpts.get(i), subdivpts.get(ni), Centerout);
+    PVector p1c = PVector.sub(Centerout,subdivpts.get(i));
+    float radius = p1c.mag();
+    complpair.add(i);
+    complpair.add(ni);
+    circlesout.put(complpair,new Circle(Centerout, radius));
+    complVertPairs.add(complpair);
+  }
+}
 
-
-void Subdivide(Polygon cpoly){
+void Subdivide(float frac, Polygon cpoly){
   ArrayList<Edge> cedges = cpoly.edges;
-  ArrayList<PVector> out = new ArrayList<PVector>();
+  ArrayList<PVector> subdivpts = new ArrayList<PVector>();
   HashMap<Integer,Integer> vertsRemap = new HashMap<Integer,Integer>();
   for (int i = 0; i < cedges.size(); i++){
     Edge cedge = cedges.get(i);
     if (cedge.linear){
       if (cedge.thick){
         
-        getNGonSubdivisionPoints(3,cedge,out,vertsRemap);
+        getNGonSubdivisionPoints(3,cedge,subdivpts,vertsRemap);
       }
       else{
-        getNGonSubdivisionPoints(5,cedge,out,vertsRemap);
+        getNGonSubdivisionPoints(5,cedge,subdivpts,vertsRemap);
       }
     }
     else{
       if (cedge.thick){
-        getCurveSubdivisionPoints(3,cedge,out, vertsRemap);
+        getCurveSubdivisionPoints(3,cedge,subdivpts, vertsRemap);
       }
       else{
-        getCurveSubdivisionPoints(5,cedge,out, vertsRemap);
+        getCurveSubdivisionPoints(5,cedge,subdivpts, vertsRemap);
       }
     }
   }
+  //build arc/circle data for polygon
+  ArrayList<Circle> centcircles = new ArrayList<Circle>();
+  getCentroidCircles(frac, cpoly, centcircles);
   
 }

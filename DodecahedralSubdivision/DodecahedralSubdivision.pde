@@ -42,6 +42,8 @@ class Edge{
   boolean thick; //Thick edge is true otherwise thin edge is false
   boolean linear;  // Linear if true otherwise arc if false
   Circle circle;
+  int interiornp1;  //this is only called for main edge to interior edges mappings
+  int interiornp2; //this is only called for main edge to interior edges mappings 
   Edge(PVector P1, PVector P2, boolean Thick, int P1index, int P2index){
     //This is a assumed linear edge constructor call...use this constructor call
     //only if the edge is linear
@@ -68,6 +70,25 @@ class Edge{
     p2index = P2index;
     circle = new Circle(GenCenter,GenR);
   }
+  Edge(PVector P1, PVector P2, PVector GenCenter,
+       float GenR, int P1index, int P2index){
+    //This is a special edge constructor call used for edge Circle to Interior
+    // Circles mapping. That is in forming the subdivisions of an existing
+    // polygon.
+    p1 = P1;
+    p2 = P2;
+    //linear = true;
+    //thick = Thick;
+    genCenter = GenCenter;
+    genR = GenR;
+    //angle1 = Angle1;
+    //angle2 = Angle2;
+    p1index = P1index;
+    p2index = P2index;
+    //interiornp1 = Interiornp1;
+    //interiornp2 = Interiornp2;
+    circle = new Circle(GenCenter,GenR);
+  }
 }
 
 class Circle{
@@ -76,6 +97,19 @@ class Circle{
   Circle(PVector Center, float Radius){
     center = Center;
     radius = Radius;
+  }
+}
+
+class CircleMap{
+  HashMap<ArrayList<Integer>,Circle> vertPairToCircle;  //vertex pairs (indexing) to circle
+  HashMap<Circle,ArrayList<Circle>> interiorCircles;  // circle to interior circle mapping
+  HashMap<Circle, ArrayList<Integer>> circleToVertPair;
+  HashMap<Edge,ArrayList<Edge>> interiorEdges;  //Edge to interior edges.
+  CircleMap(){
+    vertPairToCircle = new HashMap<ArrayList<Integer>,Circle>();
+    interiorCircles = new HashMap<Circle,ArrayList<Circle>>();
+    circleToVertPair = new HashMap<Circle,ArrayList<Integer>>();
+    interiorEdges = new HashMap<Edge,ArrayList<Edge>>();
   }
 }
 
@@ -429,9 +463,11 @@ void setArcincs(Polygon cpoly, float atime){
 
 void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts, 
                           HashMap<Integer,Integer> vertsRemap,
-                          HashMap<ArrayList<Integer>,Circle> circlesout){
+                          CircleMap circlemapout){
   Collection<Integer> flaggedVerts = vertsRemap.values();
   ArrayList<ArrayList<Integer>> complVertPairs = new ArrayList<ArrayList<Integer>>();
+  //HashMap<Integer,ArrayList<Integer>> vertToPair = new HashMap<Integer,ArrayList<Integer>>();
+  //HashMap<Circle,ArrayList<Circle>> interiorCircles = new HashMap<Circle,ArrayList<Circle>>();
   for (int i = 0; i < subdivpts.size(); i++){
     ArrayList<Integer> complpair = new ArrayList<Integer>();
     if (flaggedVerts.contains(i)){
@@ -442,10 +478,83 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     if (cpoly.vertices.size() >= 5){
       ni = i+4 % subdivpts.size();
       pi = i-4 % subdivpts.size();
+      if (flaggedVerts.contains(ni)){
+        int ipi = (i - 1) % subdivpts.size();
+        int iipi = (ipi - 2) % subdivpts.size();
+        if (vertToVertPair.containsKey(ipi) && vertToVertPair.containsKey(iipi)){
+          ArrayList<Integer> pair1 = vertToVertPair.get(i);
+          PVector P2;
+          Integer P2index;
+          if (pair1.get(0) == i){
+            P2 = subdivpts.get(pair1.get(1));
+            P2index = pair1.get(1);
+          }
+          else {
+            P2 = subdivpts.get(pair1.get(0));
+            P2index = pair1.get(0);
+          }
+          PVector P1 = subdivpts.get(i);
+          Integer P1index = i;
+          Circle c1 = circlemapout.vertPairToCircle.get(pair1);
+          Edge edg = new Edge(P1, P2, c1.center, c1.radius, P1index, P2index);
+          //repeat getting interior edge/arc/circle 1
+          edg.interiornp1 = ipi;
+          edg.interiornp2 = iipi;
+          ArrayList<Edge> iedges = new ArrayList<Edge>();
+          ArrayList<Integer> ipair1 = vertToVertPair.get(ipi);
+          PVector iP2;
+          Integer iP2index;
+          if (ipair1.get(0) == ipi){
+            iP2 = subdivpts.get(ipair1.get(1));
+            iP2index = ipair1.get(1);
+          }
+          else {
+            iP2 = subdivpts.get(ipair1.get(0));
+            iP2index = ipair1.get(0);
+          }
+          PVector iP1 = subdivpts.get(ipi);
+          Integer iP1index = ipi;
+          Circle ic1 = circlemapout.vertPairToCircle.get(ipair1);
+          Edge iedg = new Edge(iP1, iP2, ic1.center, ic1.radius, iP1index, iP2index);
+          //
+          ArrayList<Integer> iipair1 = vertToVertPair.get(iipi);
+          PVector iiP2;
+          Integer iiP2index;
+          if (iipair1.get(0) == iipi){
+            iiP2 = subdivpts.get(iipair1.get(1));
+            iiP2index = iipair1.get(1);
+          }
+          else {
+            iiP2 = subdivpts.get(iipair1.get(0));
+            iiP2index = iipair1.get(0);
+          }
+          PVector iiP1 = subdivpts.get(iipi);
+          Integer iiP1index = iipi;
+          Circle iic1 = circlemapout.vertPairToCircle.get(iipair1);
+          Edge iiedg = new Edge(iiP1, iiP2, iic1.center, iic1.radius, iiP1index, iiP2index);
+          iedges.add(iedg);
+          iedges.add(iiedg);
+          circlemapout.interiorEdges.put(edg,iedges);
+        }
+        continue;  
+      }
     }
     else{
-      ni = i+3 % subdivpts.size();
-      pi = i-3 % subdivpts.size();
+      int ini, ipi;
+      ini = (i + 1)% subdivpts.size();
+      ipi = (i - 1)% subdivpts.size();
+      if (flaggedVerts.contains(ini) || flaggedVerts.contains(ipi)){
+        ni = i+3 % subdivpts.size();
+        pi = i-3 % subdivpts.size();
+      }
+      else{
+        ni = i+4 % subdivpts.size();
+        pi = i-4 % subdivpts.size();
+        if (flaggedVerts.contains((ni-1)% subdivpts.size())){
+          continue;  
+        }
+      }
+
     }
     //vert pair test to see if Arc already computed on previous pair set for a
     // given vertex iteration  if true for set inclusion, continue again.
@@ -461,8 +570,11 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     float radius = p1c.mag();
     complpair.add(i);
     complpair.add(ni);
-    circlesout.put(complpair,new Circle(Centerout, radius));
+    circlemapout.vertPairToCircle.put(complpair,new Circle(Centerout, radius));
+    
     complVertPairs.add(complpair);
+    vertToVertPair.put(i, complpair);
+    vertToVertPair.put(ni, complpair);
   }
 }
 

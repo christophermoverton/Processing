@@ -4,7 +4,7 @@
 int NGONs1 = 3; //number of polygon sides
 float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 PVector[] NG1pos = new PVector[NGONs1];
-int SubDivLevel = 1;
+int SubDivLevel = 7;
 float speed = 1.0; 
 float time = 0.0;
 float atime = 1.0; //(animation time in seconds)

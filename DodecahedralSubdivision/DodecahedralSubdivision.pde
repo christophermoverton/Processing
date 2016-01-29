@@ -46,6 +46,7 @@ class Edge{
   int interiornp2; //this is only called for main edge to interior edges mappings 
   int pole1;  //poles are the original vertices on the polygon prior to subdivision
   int pole2;  //used in special case edge mappings
+  boolean pole;  //flagged edge that wraps around a pole
   Edge(PVector P1, PVector P2, boolean Thick, int P1index, int P2index){
     //This is a assumed linear edge constructor call...use this constructor call
     //only if the edge is linear
@@ -115,13 +116,19 @@ class CircleMap{
   }
 }
 
-void CircleCircleIntersection(Circle c1, Circle c2, PVector ipoint){
+void CircleCircleIntersection(Circle c1, Circle c2, ArrayList<PVector> ipts){
   PVector c1c2 = PVector.sub(c1.center, c2.center);
   float dc1c2 = c1c2.mag();
   float x = (dc1c2*dc1c2 - c1.radius*c1.radius + c2.radius*c2.radius)/2*dc1c2;
-  float y = (4*pow(dc1c2,2)*pow(c2.radius,2) -pow(pow(dc1c2,2)-pow(c1.radius,2)+pow(c2.radius,2),2))/4*pow(dc1c2,2);
-  ipoint.x = x;
-  ipoint.y = y;
+  float y2 = (4*pow(dc1c2,2)*pow(c2.radius,2) -pow(pow(dc1c2,2)-pow(c1.radius,2)+pow(c2.radius,2),2))/4*pow(dc1c2,2);
+  //ipoint.x = x;
+  //ipoint.y = y;
+  float yn = -1*pow(y2,.5);
+  float yp = pow(y2,.5);
+  PVector xyn = PVector.add(PVector(x,yn,0.0),c2.center);
+  PVector xyp = PVector.add(PVector(x,yp,0.0),c2.center);
+  ipts.add(xyn);
+  ipts.add(xyp);
 }
 
 void Polarcoord(float angle, float radius, PVector xy){
@@ -505,10 +512,12 @@ void writeCircleMapData(HashMap<Integer,ArrayList<Integer>> vertToVertPair,
     int iipi = (ipi - 2) % subdivpts.size();
     int pole1 = (ipi - 1) % subdivpts.size();
     int pole2 = (ipi - 1) % subdivpts.size();
+    boolean pole = true;
     if (!Pole){
       iipi = (ipi - 1) % subdivpts.size();
       pole1 = (i + 1) % subdivpts.size();
       pole2 = (i - 4) % subdivpts.size();
+      pole = false;
     }
         //if (vertToVertPair.containsKey(ipi) && vertToVertPair.containsKey(iipi)){
     ArrayList<Integer> pair1 = vertToVertPair.get(i);
@@ -531,6 +540,7 @@ void writeCircleMapData(HashMap<Integer,ArrayList<Integer>> vertToVertPair,
     edg.interiornp2 = iipi;
     edg.pole1 = pole1;
     edg.pole2 = pole2;
+    edg.pole = pole;
     ArrayList<Edge> iedges = new ArrayList<Edge>();
     ArrayList<Integer> ipair1 = vertToVertPair.get(ipi);
     PVector iP2;
@@ -649,13 +659,67 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
   
 }
 
-void buildInteriorPolygons(ArrayList<Circle> centroidcircles, CircleMap circlemap){
+PVector closestPoint(ArrayList<Pvector> pts, PVector pos){
+  ArrayList<Float> ds = new ArrayList<Float>();
+  for (PVector pt : pts){
+    PVector postopt = PVector.sub(pt,pos);
+    ds.add(postopt.mag());
+  }
+  return pts.get(ds.indexOf(min(ds)));
+}
+
+void getCentCirclesfromPoles(int pole1, int pole2, ArrayList<Circle> centcircles,
+                             ArrayList<Circle> out){
+  if (centcircles.size() == 3){
+    out.add(centcircles.get(pole1));
+    if (pole1 != pole2){
+      out.add(centcircles.get(pole2));
+    }
+  }
+  else if (centcircles.size()== 4){
+    if (pole1 == 0 || pole1 == 3){
+      out.add(centcircles.get(0));
+    }
+    else if (pole1 == 1 || pole1 == 2){
+      out.add(centcircles.get(1));
+    }
+    if (pole1 != pole2){
+      if (pole2 == 0 || pole2 == 3){
+        out.add(centcircles.get(0));
+      }
+      else if (pole2 == 1 || pole2 == 2){
+        out.add(centcircles.get(1));
+      }
+    }
+  }
+  else{
+    out = centcircles;
+  }
+}
+
+void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles, 
+                           CircleMap circlemap){
   HashMap<Edge,ArrayList<Edge>> interioredges = circlemap.interiorEdges;
   for (Map.Entry me : interioredges.entrySet()) {
     Edge pedge = me.getKey();
     Edge iedge = me.getValue().get(0);
     Edge iedge2 = me.getValue().get(1);
-    
+    if (pedge.pole){
+      ArrayList<PVector> ipts = new ArrayList<PVector>();
+      CircleCircleIntersection(pedge.circle, iedge.circle, ipts);
+      ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
+      ptSetinPolygon(cpoly, ipts, iptsinpoly);
+      PVector ipt1 = closestPoint(iptsinpoly, pedge.pole1);
+      ArrayList<PVector> ipts = new ArrayList<PVector>();
+      CircleCircleIntersection(pedge.circle, iedge2.circle, ipts);
+      ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
+      ptSetinPolygon(cpoly, ipts, iptsinpoly);
+      PVector ipt2 = closestPoint(iptsinpoly, pedge.pole1);
+      ArrayList<PVector> ipts = new ArrayList<PVector>();
+      ArrayList<Circle> pecCircles = new ArrayList<Circle>();
+      getCentCirclesfromPoles(pedge.pole1, pedge.pole2, centcircles,pecCircles);
+      CircleCircleIntersection(pedge.circle, , ArrayList<PVector> ipts);
+    }
   }
 }
 

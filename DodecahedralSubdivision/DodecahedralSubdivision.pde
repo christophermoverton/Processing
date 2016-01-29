@@ -710,15 +710,24 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
       PVector ipt1 = closestPoint(iptsinpoly, pedge.pole1);
-      ArrayList<PVector> ipts = new ArrayList<PVector>();
+      ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge2.circle, ipts);
-      ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
+      iptsinpoly = new ArrayList<PVector>();
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
       PVector ipt2 = closestPoint(iptsinpoly, pedge.pole1);
-      ArrayList<PVector> ipts = new ArrayList<PVector>();
+      ipts = new ArrayList<PVector>();
       ArrayList<Circle> pecCircles = new ArrayList<Circle>();
       getCentCirclesfromPoles(pedge.pole1, pedge.pole2, centcircles,pecCircles);
-      CircleCircleIntersection(pedge.circle, , ArrayList<PVector> ipts);
+      Circle peccircle = pecCircles.get(0);
+      CircleCircleIntersection(pedge.circle, peccircle, ipts);
+      PVector ipt3 = ipts.get(0);
+      PVector ipt4 = ipts.get(1);
+      ipts = new ArrayList<PVector>();
+      CircleCircleIntersection(iedge.circle, peccircle, ipts);
+      PVector ipt5 = closestPoint(ipts, pedge.pole1);
+      ipts = new ArrayList<PVector>();
+      CircleCircleIntersection(iedge2.circle, peccircle, ipts);
+      PVector ipt6 = closestPoint(ipts, pedge.pole1);
     }
   }
 }

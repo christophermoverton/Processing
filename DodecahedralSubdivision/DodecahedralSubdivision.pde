@@ -1,4 +1,5 @@
 import java.util.Map;
+import java.util.Collections;
 float atime = 1.0; //(animation time in seconds)
 float frac = .30; //fractional size (recommend that this is < .5)
 class Polygon{
@@ -13,7 +14,9 @@ class Polygon{
   ArrayList<Edge> edges;
   HashMap<ArrayList<PVector>,Integer> pointsToEdge; // A vertices to edges index lookup
   //points are keyed to a given winding order, ArrayList<PVector> is of point paired size.
-  
+  HashMap<Integer,Integer> ptToSubdivPt;
+  ArrayList<PVector> subdivpts;
+  //HashMap<Integer,Integer> subdivPtToPt;
   Polygon(ArrayList<PVector> verts, PVector PCent){
     vertices = verts;
     center = PCent;
@@ -26,6 +29,15 @@ class Polygon{
     p2s = new ArrayList<PVector>();
     edges = new ArrayList<Edge>();
     pointsToEdge = new HashMap<ArrayList<PVector>,Integer>();
+  }
+  void subdivPtToPtbuild(){
+   //assuming that ptToSubdivPt exists
+   subdivPtToPt = new HashMap<Integer,Integer>();
+   for (Map.Entry me : ptToSubdivPt.entrySet()) {
+     int value = me.getKey();
+     int ikey = me.getValue();
+     subdivPtToPt.put(ikey,value);
+   }
   }
 }
 
@@ -697,6 +709,31 @@ void getCentCirclesfromPoles(int pole1, int pole2, ArrayList<Circle> centcircles
   }
 }
 
+void getWindingOrder(int v1, int v2, int modop, ArrayList<Integer> out){
+  boolean t1 = v2 == (modop-1);
+  boolean t2 = v1 == 0;
+  boolean t3 = t1 && t2;
+  boolean t4 = v1 == (modop-1);
+  boolean t5 = v2 == 0;
+  boolean t6 = t4 && t5;
+  if (v1 % modop < v2 % modop  && !t3){
+    out.add(v1);
+    out.add(v2);
+  }
+  else if (v1 % modop > v2 % modop && !t6){
+    out.add(v2);
+    out.add(v1);
+  }
+  else if (v1 % modop < v2 % modop  && t3){
+    out.add(v2);
+    out.add(v1);
+  }
+  else if (v1 % modop > v2 % modop && t6){
+    out.add(v1);
+    out.add(v2);
+  }
+}
+
 void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles, 
                            CircleMap circlemap){
   HashMap<Edge,ArrayList<Edge>> interioredges = circlemap.interiorEdges;
@@ -728,6 +765,13 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(iedge2.circle, peccircle, ipts);
       PVector ipt6 = closestPoint(ipts, pedge.pole1);
+      //first polygon is the pole 5 sided polygon
+      //get the original edge data
+      int opi = cpoly.subdivPtToPt.get(pedge.pole);
+      int nopi = (opi+1)%cpoly.vertices.size();
+      int popi = (opi-1)%cpoly.vertices.size();
+      ArrayList<Integer,Integer> polpair = new ArrayList<Integer,Integer>();
+      getWindingOrder(opi, nopi, cpoly.vertices.size(), polpair);
     }
   }
 }
@@ -742,17 +786,29 @@ void Subdivide(float frac, Polygon cpoly){
       if (cedge.thick){
         
         getNGonSubdivisionPoints(3,cedge,subdivpts,vertsRemap);
+        cpoly.ptToSubdivPt = vertsRemap;
+        cpoly.subdivPtToPtbuild();
+        cpoly.subdivpts = subdivpts;
       }
       else{
         getNGonSubdivisionPoints(5,cedge,subdivpts,vertsRemap);
+        cpoly.ptToSubdivPt = vertsRemap;
+        cpoly.subdivPtToPtbuild();
+        cpoly.subdivpts = subdivpts;
       }
     }
     else{
       if (cedge.thick){
         getCurveSubdivisionPoints(3,cedge,subdivpts, vertsRemap);
+        cpoly.ptToSubdivPt = vertsRemap;
+        cpoly.subdivPtToPtbuild();
+        cpoly.subdivpts = subdivpts;
       }
       else{
         getCurveSubdivisionPoints(5,cedge,subdivpts, vertsRemap);
+        cpoly.ptToSubdivPt = vertsRemap;
+        cpoly.subdivPtToPtbuild();
+        cpoly.subdivpts = subdivpts;
       }
     }
   }

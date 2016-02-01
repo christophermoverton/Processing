@@ -58,6 +58,7 @@ class Edge{
   int interiornp1;  //this is only called for main edge to interior edges mappings
   int interiornp2; //this is only called for main edge to interior edges mappings 
   int pole1;  //poles are the original vertices on the polygon prior to subdivision
+              //This is a subdivision index mapping.
   int pole2;  //used in special case edge mappings
   boolean pole;  //flagged edge that wraps around a pole
   Edge(PVector P1, PVector P2, boolean Thick, int P1index, int P2index){
@@ -93,7 +94,7 @@ class Edge{
     // polygon.
     p1 = P1;
     p2 = P2;
-    //linear = true;
+    linear = false;
     //thick = Thick;
     genCenter = GenCenter;
     genR = GenR;
@@ -739,17 +740,47 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
                          Integer np2index, Edge parent, Polygon opoly,
                          Integer op1index, Integer op2index,
                           Edge out){
+  //function call is given from edge data constructed from point subdivision data 
+  //on the polygon only...doesn't work for interior subdivision points.
+  //Use alternate overloaded method for the other edge construction type for 
+  //interior subdivision points.
   //opoly is the original polygon (subdivision point set).
   //np1index is new polygon indexing 1   (On the new polygon point set).
   //op1index is the original polygon indexing 1. (On the set of subivision points set)
   ArrayList<Integer> ptpair = new ArrayList<Integer>();
   ptpair.add(op1index);
   ptpair.add(op2index);
-  Boolean ethick = cpoly.SubdivPtPairtoThick.get(ptpair);
+  Boolean ethick = opoly.SubdivPtPairtoThick.get(ptpair);
   if (parent.linear){
     //this constructor call is made..
     //Edge(PVector P1, PVector P2, boolean Thick, int P1index, int P2index)
     old = new Edge(pt1, pt2, ethick, np1index, np2index);
+  }
+  else{
+    //Edge(PVector P1, PVector P2, boolean Thick, PVector GenCenter,
+    //   float GenR, float Angle1, float Angle2, int P1index, int P2index)
+    PVector CToP1 = PVector.sub(P1,parent.genCenter);
+    PVector CtoP2 = PVector.sub(P2,parent.genCenter);
+    float a1 = CToP1.heading();
+    float a2 = CToP2.heading();
+    old = new Edge(pt1, pt2, ethick, parent.genCenter, 
+                   parent.genR, a1, a2, np1index, np2index);
+  }
+}
+
+void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
+                         Integer np2index, Edge parent, Boolean edgeThick,
+                          Edge out){
+  //alternate overloaded method for the other edge construction type for 
+  //interior subdivision points.
+  //opoly is the original polygon (subdivision point set).
+  //np1index is new polygon indexing 1   (On the new polygon point set).
+  //op1index is the original polygon indexing 1. (On the set of subivision points set)
+
+  if (parent.linear){
+    //this constructor call is made..
+    //Edge(PVector P1, PVector P2, boolean Thick, int P1index, int P2index)
+    old = new Edge(pt1, pt2, edgeThick, np1index, np2index);
   }
   else{
     //Edge(PVector P1, PVector P2, boolean Thick, PVector GenCenter,
@@ -802,6 +833,19 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       int popi = (opi-1)%cpoly.vertices.size();
       ArrayList<Integer,Integer> polpair = new ArrayList<Integer,Integer>();
       getWindingOrder(opi, nopi, cpoly.vertices.size(), polpair);
+      ArrayList<Integer,Integer> polpair2 = new ArrayList<Integer,Integer>();
+      getWindingOrder(opi, popi, cpoly.vertices.size(), polpair2);
+      //1rst polygon//
+      PVector ept1 = cpoly.subdivpts.get(pedge.pole1);
+      PVector ept2 = cpoly.subdivpts.get(pedge.interiornp1);
+      PVector ept3 = cpoly.subdivpts.get(pedge.interiornp2);
+      PVector[] verts = {ept1,ept2,ipt5,ipt6,ept3};
+      ArrayList<PVector> vertsal = new ArrayList<PVector>();
+      Collections.addAll(vertsal,verts);
+      Boolean[] edgThcks = {true,true,true,true,true}; 
+      
+      ParentEdges[] = {cpoly.pointsToEdge.get(polpair),iedge,peccircle,iedge2,
+                       cpoly.pointsToEdge.get(polpair2)};
     }
   }
 }

@@ -16,6 +16,7 @@ class Polygon{
   //points are keyed to a given winding order, ArrayList<PVector> is of point paired size.
   HashMap<Integer,Integer> ptToSubdivPt;
   ArrayList<PVector> subdivpts;
+  HashMap<ArrayList<Integer,Integer>,Boolean> SubdivPtPairtoThick;
   //HashMap<Integer,Integer> subdivPtToPt;
   Polygon(ArrayList<PVector> verts, PVector PCent){
     vertices = verts;
@@ -734,6 +735,34 @@ void getWindingOrder(int v1, int v2, int modop, ArrayList<Integer> out){
   }
 }
 
+void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
+                         Integer np2index, Edge parent, Polygon opoly,
+                         Integer op1index, Integer op2index,
+                          Edge out){
+  //opoly is the original polygon (subdivision point set).
+  //np1index is new polygon indexing 1   (On the new polygon point set).
+  //op1index is the original polygon indexing 1. (On the set of subivision points set)
+  ArrayList<Integer> ptpair = new ArrayList<Integer>();
+  ptpair.add(op1index);
+  ptpair.add(op2index);
+  Boolean ethick = cpoly.SubdivPtPairtoThick.get(ptpair);
+  if (parent.linear){
+    //this constructor call is made..
+    //Edge(PVector P1, PVector P2, boolean Thick, int P1index, int P2index)
+    old = new Edge(pt1, pt2, ethick, np1index, np2index);
+  }
+  else{
+    //Edge(PVector P1, PVector P2, boolean Thick, PVector GenCenter,
+    //   float GenR, float Angle1, float Angle2, int P1index, int P2index)
+    PVector CToP1 = PVector.sub(P1,parent.genCenter);
+    PVector CtoP2 = PVector.sub(P2,parent.genCenter);
+    float a1 = CToP1.heading();
+    float a2 = CToP2.heading();
+    old = new Edge(pt1, pt2, ethick, parent.genCenter, 
+                   parent.genR, a1, a2, np1index, np2index);
+  }
+}
+
 void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles, 
                            CircleMap circlemap){
   HashMap<Edge,ArrayList<Edge>> interioredges = circlemap.interiorEdges;
@@ -766,7 +795,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       CircleCircleIntersection(iedge2.circle, peccircle, ipts);
       PVector ipt6 = closestPoint(ipts, pedge.pole1);
       //first polygon is the pole 5 sided polygon
-      //get the original edge data
+      //get the original edge data...this is inheritance data for parent subdivided
+      //edges.
       int opi = cpoly.subdivPtToPt.get(pedge.pole);
       int nopi = (opi+1)%cpoly.vertices.size();
       int popi = (opi-1)%cpoly.vertices.size();
@@ -776,15 +806,50 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
   }
 }
 
+void buildThickEdgeDat(Edge cedge, HashMap<Integer,Integer> vertsRemap, 
+                       int SubdivPtsSize, Boolean lastEdge,
+                       HashMap<ArrayList<Integer,Integer>,Boolean> SubdivPtPairtoThick){
+  //iterated call sequentially done from the last edge subdivision call
+  //get starting point.  Note:  This is not to be sequentially called after
+  //the construciton of subdivision points on a polygon, but sequentially after the 
+  //subdivision points on the edge of a polygon have been formed instead.  
+  Integer p1ind = cedge.p1index;
+  Integer subdivp1ind = vertsRemap.get(p1ind);
+  //test for oddness on modulus 2 indicates thickness or thinness of edge 
+  //on starting vertex index on edge point pair.
+  int inc = 0;
+  for (int i = subdivp1ind; i < SubdivPtsSize; i++){
+    int ni = i+1;
+    if (lastEdge && i == (SubdivPtsSize-1)){
+      ni = 0;
+    }
+    ArrayList<Integer,Integer> ptpair = new ArrayList<Integer,Integer>();
+    ptpair.add(i);
+    ptpair.add(ni);
+    if (inc % 2 == 0){
+      SubdivPtPairtoThick.put(ptpair, true);
+    }
+    else{
+      SubdivPtPairtoThick.put(ptpair, false);
+    }
+    inc += 1;
+  }
+}
+
 void Subdivide(float frac, Polygon cpoly){
   ArrayList<Edge> cedges = cpoly.edges;
   ArrayList<PVector> subdivpts = new ArrayList<PVector>();
   HashMap<Integer,Integer> vertsRemap = new HashMap<Integer,Integer>();
+  HashMap<ArrayList<Integer,Integer>,Boolean> SubdivPtPairtoThick = new HashMap<ArrayList<Integer,Integer>,Boolean>();
   for (int i = 0; i < cedges.size(); i++){
     Edge cedge = cedges.get(i);
+    Boolean lastEdge = false;
+    if (i == cedges.size()-1){
+      lastEdge = true;
+    }
     if (cedge.linear){
       if (cedge.thick){
-        
+
         getNGonSubdivisionPoints(3,cedge,subdivpts,vertsRemap);
         cpoly.ptToSubdivPt = vertsRemap;
         cpoly.subdivPtToPtbuild();
@@ -806,12 +871,17 @@ void Subdivide(float frac, Polygon cpoly){
       }
       else{
         getCurveSubdivisionPoints(5,cedge,subdivpts, vertsRemap);
-        cpoly.ptToSubdivPt = vertsRemap;
-        cpoly.subdivPtToPtbuild();
-        cpoly.subdivpts = subdivpts;
+
       }
     }
+
+    buildThickEdgeDat(cedge, vertsRemap, subdivpts.size(), lastEdge,
+               SubdivPtPairtoThick);
   }
+  cpoly.ptToSubdivPt = vertsRemap;
+  cpoly.subdivPtToPtbuild();
+  cpoly.subdivpts = subdivpts;
+  cpoly.SubdivPtPairtoThick = SubdivPtPairtoThick; 
   //build arc/circle data for polygon
   ArrayList<Circle> centcircles = new ArrayList<Circle>();
   getCentroidCircles(frac, cpoly, centcircles);

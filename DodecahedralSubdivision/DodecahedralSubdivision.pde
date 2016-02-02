@@ -794,8 +794,32 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
   }
 }
 
+void buildInteriorPolygon(PVector[] verts, Boolean[] edgThcks, Edge[] ParentEdges,
+                          Polygon pout){
+  HashMap<ArrayList<PVector>,Integer> pointsToEdge = new HashMap<ArrayList<PVector>,Integer>();
+  ArrayList<Edge> Edges = new ArrayList<Edge>();
+  for (int i = 0; i < verts.length; i++){
+    int ni = (i+1)%verrts.length;
+    Edge out;
+    buildEdgefromParent(verts[i], verts[ni], i, ni, ParentEdges[i], edgThcks[i], out);
+    ArrayList<PVector> ptpairal = new ArrayList<PVector>();
+    PVector[] ptpair = {verts[i],verts[ni]};
+    Collections.addAll(ptpairal,ptpair);
+    pointsToEdge.put(ptpairal,Edges.size());
+    Edges.add(out);
+  }
+  ArrayList<PVector> vertsal = new ArrayList<PVector>();
+  Collections.addAll(vertsal,verts);
+  PVector PCenter = new PVector(0.0,0.0,0.0);
+  PolygonCentroid(vertsal, PCenter);
+  pout = new Polygon(vertsal, PCenter);
+  pout.edges = Edges;
+  pout.pointsToEdge = pointsToEdge;
+}
+
 void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles, 
-                           CircleMap circlemap){
+                           CircleMap circlemap, ArrayList<Polygon> outPolys){
+  
   HashMap<Edge,ArrayList<Edge>> interioredges = circlemap.interiorEdges;
   for (Map.Entry me : interioredges.entrySet()) {
     Edge pedge = me.getKey();
@@ -831,10 +855,18 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       int opi = cpoly.subdivPtToPt.get(pedge.pole);
       int nopi = (opi+1)%cpoly.vertices.size();
       int popi = (opi-1)%cpoly.vertices.size();
-      ArrayList<Integer,Integer> polpair = new ArrayList<Integer,Integer>();
+      ArrayList<Integer> polpair = new ArrayList<Integer>();
       getWindingOrder(opi, nopi, cpoly.vertices.size(), polpair);
-      ArrayList<Integer,Integer> polpair2 = new ArrayList<Integer,Integer>();
+      PVector[] polpairvec= {cpoly.vertices.get(polpair.get(0)), 
+                             cpoly.vertices.get(polpair.get(1))};
+      ArrayList<PVector> polpairvecal = new ArrayList<PVector>();
+      Collections.addAll(polpairvecal,polpairvec);
+      ArrayList<Integer> polpair2 = new ArrayList<Integer>();
       getWindingOrder(opi, popi, cpoly.vertices.size(), polpair2);
+      PVector[] polpairvec2= {cpoly.vertices.get(polpair2.get(0)), 
+                              cpoly.vertices.get(polpair2.get(1))};
+      ArrayList<PVector> polpairvecal2 = new ArrayList<PVector>();
+      Collections.addAll(polpairvecal2,polpairvec2);      
       //1rst polygon//
       PVector ept1 = cpoly.subdivpts.get(pedge.pole1);
       PVector ept2 = cpoly.subdivpts.get(pedge.interiornp1);
@@ -844,8 +876,11 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       Collections.addAll(vertsal,verts);
       Boolean[] edgThcks = {true,true,true,true,true}; 
       
-      ParentEdges[] = {cpoly.pointsToEdge.get(polpair),iedge,peccircle,iedge2,
-                       cpoly.pointsToEdge.get(polpair2)};
+      Edge[] ParentEdges = {cpoly.pointsToEdge.get(polpairvecal),iedge,peccircle,iedge2,
+                            cpoly.pointsToEdge.get(polpairvecal2)};
+      Polygon pout;
+      buildInteriorPolygon(verts, edgThcks, ParentEdges, pout);
+      outPolys.add(pout);
     }
   }
 }

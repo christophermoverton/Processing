@@ -1,5 +1,6 @@
 import java.util.Map;
 import java.util.Collections;
+import java.util.Collection;
 float atime = 1.0; //(animation time in seconds)
 float frac = .30; //fractional size (recommend that this is < .5)
 class Polygon{
@@ -16,7 +17,7 @@ class Polygon{
   //points are keyed to a given winding order, ArrayList<PVector> is of point paired size.
   HashMap<Integer,Integer> ptToSubdivPt;
   ArrayList<PVector> subdivpts;
-  HashMap<ArrayList<Integer,Integer>,Boolean> SubdivPtPairtoThick;
+  HashMap<ArrayList<Integer>,Boolean> SubdivPtPairtoThick;
   //HashMap<Integer,Integer> subdivPtToPt;
   Polygon(ArrayList<PVector> verts, PVector PCent){
     vertices = verts;
@@ -24,22 +25,22 @@ class Polygon{
     arcs = new ArrayList<Edge>();
     arcincs = new ArrayList<Float>();
     spokenorms = new ArrayList<PVector>();
-    sincvals = ArrayList<Float>();
+    sincvals = new ArrayList<Float>();
 
     intpolypoints = new ArrayList<PVector>();
     p2s = new ArrayList<PVector>();
     edges = new ArrayList<Edge>();
     pointsToEdge = new HashMap<ArrayList<PVector>,Integer>();
   }
-  void subdivPtToPtbuild(){
-   //assuming that ptToSubdivPt exists
-   subdivPtToPt = new HashMap<Integer,Integer>();
-   for (Map.Entry me : ptToSubdivPt.entrySet()) {
-     int value = me.getKey();
-     int ikey = me.getValue();
-     subdivPtToPt.put(ikey,value);
-   }
-  }
+  //void subdivPtToPtbuild(){
+  // //assuming that ptToSubdivPt exists
+  // subdivPtToPt = new HashMap<Integer,Integer>();
+  // for (Map.Entry me : ptToSubdivPt.entrySet()) {
+  //   int value = me.getKey();
+  //   int ikey = me.getValue();
+  //   subdivPtToPt.put(ikey,value);
+  // }
+  //}
 }
 
 class Edge{
@@ -106,6 +107,31 @@ class Edge{
     //interiornp2 = Interiornp2;
     circle = new Circle(GenCenter,GenR);
   }
+  Edge(Circle circlei){
+    genCenter = circlei.center;
+    genR = circlei.radius;
+    circle = circlei;
+  }
+  Edge(){
+    p1 = new PVector(0.0,0.0,0.0);
+    p2 = new PVector(0.0,0.0,0.0);  // p2 is point 2 on the edge pair
+    p1index = 0;  // polygon vertices index
+    p2index = 0;  
+    genCenter = new PVector(0.0,0.0,0.0);  //generator center.  This is the edge coordinate generating center
+  // genCenter is the main generating circle for such edge
+    genR = 1.0; // radius of genrating circle.
+    angle1 = 0.0; //polar angle1 generating p1
+    angle2 = 0.0; //polar angle2 generating p2
+    thick = false; //Thick edge is true otherwise thin edge is false
+    linear = false;  // Linear if true otherwise arc if false
+    circle = new Circle(genCenter,genR);
+    interiornp1 = 0;  //this is only called for main edge to interior edges mappings
+    interiornp2 = 0; //this is only called for main edge to interior edges mappings 
+    pole1 = 0;  //poles are the original vertices on the polygon prior to subdivision
+              //This is a subdivision index mapping.
+    pole2 = 0;  //used in special case edge mappings
+    pole = false;  //flagged edge that wraps around a pole
+  }
 }
 
 class Circle{
@@ -139,8 +165,8 @@ void CircleCircleIntersection(Circle c1, Circle c2, ArrayList<PVector> ipts){
   //ipoint.y = y;
   float yn = -1*pow(y2,.5);
   float yp = pow(y2,.5);
-  PVector xyn = PVector.add(PVector(x,yn,0.0),c2.center);
-  PVector xyp = PVector.add(PVector(x,yp,0.0),c2.center);
+  PVector xyn = PVector.add(new PVector(x,yn,0.0),c2.center);
+  PVector xyp = PVector.add(new PVector(x,yp,0.0),c2.center);
   ipts.add(xyn);
   ipts.add(xyp);
 }
@@ -165,7 +191,7 @@ void getNGonPoints(int nside, float radius, PVector[] pos){
   }
 }
 
-float distPointToLine(PVector p1, PVector p2, PVector p3){
+float distPointToLine(PVector p0, PVector p1, PVector p2){
   //p1 and p2 represent points on the line, and p3 is a point elsewhere.
   //see also http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
   PVector p0p1 = PVector.sub(p0,p1);
@@ -497,12 +523,16 @@ void ptSetinPolygon(Polygon cpoly, ArrayList<PVector> pts, ArrayList<PVector> ou
     for (int j = 0; j < cpoly.vertices.size(); j++){
       ArrayList<PVector> edge = new ArrayList<PVector>();
       float yi = cpoly.vertices.get(j).y;
-      float nyi = cpoly.vertices.get((j+1)%vertices.size()).y;
+      float nyi = cpoly.vertices.get((j+1)% cpoly.vertices.size()).y;
       float py = pts.get(i).y;
-      if ((yi <= py <= nyi)|| (yi >= py >= nyi)){
+      boolean e1 = yi <= py;
+      boolean e2 = py <= nyi;
+      boolean e3 = yi >= py;
+      boolean e4 = py >= nyi;
+      if ((e1 && e2)|| (e3 && e4)){
         test1 = true;
         edge.add(cpoly.vertices.get(j));
-        edge.add(cpoly.vertices.get((j+1)%vertices.size()));
+        edge.add(cpoly.vertices.get((j+1)% cpoly.vertices.size()));
         edgepts.add(edge);
       }
     }
@@ -633,7 +663,7 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
         ni = i+4 % subdivpts.size();
         pi = i-4 % subdivpts.size();
         if (flaggedVerts.contains((ni-1)% subdivpts.size())){
-          int ipi = (i - 1) % subdivpts.size();
+          ipi = (i - 1) % subdivpts.size();
           int iipi = (ipi - 1) % subdivpts.size();
           if (vertToVertPair.containsKey(ipi) && vertToVertPair.containsKey(iipi)){
             writeCircleMapData(vertToVertPair, subdivpts, circlemapout, i, true);
@@ -673,13 +703,17 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
   
 }
 
-PVector closestPoint(ArrayList<Pvector> pts, PVector pos){
+PVector closestPoint(ArrayList<PVector> pts, PVector pos){
   ArrayList<Float> ds = new ArrayList<Float>();
+  float[] dsf = new float[pts.size()];
+  int i = 0;
   for (PVector pt : pts){
     PVector postopt = PVector.sub(pt,pos);
     ds.add(postopt.mag());
+    dsf[i] = postopt.mag();
+    i += 1;
   }
-  return pts.get(ds.indexOf(min(ds)));
+  return pts.get(ds.indexOf(min(dsf)));
 }
 
 void getCentCirclesfromPoles(int pole1, int pole2, ArrayList<Circle> centcircles,
@@ -754,16 +788,16 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
   if (parent.linear){
     //this constructor call is made..
     //Edge(PVector P1, PVector P2, boolean Thick, int P1index, int P2index)
-    old = new Edge(pt1, pt2, ethick, np1index, np2index);
+    out = new Edge(pt1, pt2, ethick, np1index, np2index);
   }
   else{
     //Edge(PVector P1, PVector P2, boolean Thick, PVector GenCenter,
     //   float GenR, float Angle1, float Angle2, int P1index, int P2index)
-    PVector CToP1 = PVector.sub(P1,parent.genCenter);
-    PVector CtoP2 = PVector.sub(P2,parent.genCenter);
+    PVector CToP1 = PVector.sub(pt1,parent.genCenter);
+    PVector CToP2 = PVector.sub(pt2,parent.genCenter);
     float a1 = CToP1.heading();
     float a2 = CToP2.heading();
-    old = new Edge(pt1, pt2, ethick, parent.genCenter, 
+    out = new Edge(pt1, pt2, ethick, parent.genCenter, 
                    parent.genR, a1, a2, np1index, np2index);
   }
 }
@@ -780,16 +814,16 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
   if (parent.linear){
     //this constructor call is made..
     //Edge(PVector P1, PVector P2, boolean Thick, int P1index, int P2index)
-    old = new Edge(pt1, pt2, edgeThick, np1index, np2index);
+    out = new Edge(pt1, pt2, edgeThick, np1index, np2index);
   }
   else{
     //Edge(PVector P1, PVector P2, boolean Thick, PVector GenCenter,
     //   float GenR, float Angle1, float Angle2, int P1index, int P2index)
-    PVector CToP1 = PVector.sub(P1,parent.genCenter);
-    PVector CtoP2 = PVector.sub(P2,parent.genCenter);
+    PVector CToP1 = PVector.sub(pt1,parent.genCenter);
+    PVector CToP2 = PVector.sub(pt2,parent.genCenter);
     float a1 = CToP1.heading();
     float a2 = CToP2.heading();
-    old = new Edge(pt1, pt2, ethick, parent.genCenter, 
+    out = new Edge(pt1, pt2, edgeThick, parent.genCenter, 
                    parent.genR, a1, a2, np1index, np2index);
   }
 }
@@ -799,8 +833,8 @@ void buildInteriorPolygon(PVector[] verts, Boolean[] edgThcks, Edge[] ParentEdge
   HashMap<ArrayList<PVector>,Integer> pointsToEdge = new HashMap<ArrayList<PVector>,Integer>();
   ArrayList<Edge> Edges = new ArrayList<Edge>();
   for (int i = 0; i < verts.length; i++){
-    int ni = (i+1)%verrts.length;
-    Edge out;
+    int ni = (i+1)%verts.length;
+    Edge out = new Edge();
     buildEdgefromParent(verts[i], verts[ni], i, ni, ParentEdges[i], edgThcks[i], out);
     ArrayList<PVector> ptpairal = new ArrayList<PVector>();
     PVector[] ptpair = {verts[i],verts[ni]};
@@ -821,7 +855,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
                            CircleMap circlemap, ArrayList<Polygon> outPolys){
   
   HashMap<Edge,ArrayList<Edge>> interioredges = circlemap.interiorEdges;
-  for (Map.Entry me : interioredges.entrySet()) {
+  for (Map.Entry<Edge,ArrayList<Edge>> me : interioredges.entrySet()) {
     Edge pedge = me.getKey();
     Edge iedge = me.getValue().get(0);
     Edge iedge2 = me.getValue().get(1);
@@ -876,8 +910,15 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       Collections.addAll(vertsal,verts);
       Boolean[] edgThcks = {true,true,true,true,true}; 
       
-      Edge[] ParentEdges = {cpoly.pointsToEdge.get(polpairvecal),iedge,peccircle,iedge2,
-                            cpoly.pointsToEdge.get(polpairvecal2)};
+      Edge[] ParentEdges = {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal)),iedge,new Edge(peccircle),iedge2,
+                            cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal2))};
+      Polygon pout;
+      buildInteriorPolygon(verts, edgThcks, ParentEdges, pout);
+      outPolys.add(pout);
+      //polygon 2
+      PVector[] verts = {ipt5,ipt1,ipt2,ipt6};
+      Boolean[] edgThcks = {false,true,false,true};
+      Edge[] ParentEdges = {iedge,pedge, iedge2, new Edge(peccircle)};
       Polygon pout;
       buildInteriorPolygon(verts, edgThcks, ParentEdges, pout);
       outPolys.add(pout);
@@ -887,7 +928,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
 
 void buildThickEdgeDat(Edge cedge, HashMap<Integer,Integer> vertsRemap, 
                        int SubdivPtsSize, Boolean lastEdge,
-                       HashMap<ArrayList<Integer,Integer>,Boolean> SubdivPtPairtoThick){
+                       HashMap<ArrayList<Integer>,Boolean> SubdivPtPairtoThick){
   //iterated call sequentially done from the last edge subdivision call
   //get starting point.  Note:  This is not to be sequentially called after
   //the construciton of subdivision points on a polygon, but sequentially after the 
@@ -902,7 +943,7 @@ void buildThickEdgeDat(Edge cedge, HashMap<Integer,Integer> vertsRemap,
     if (lastEdge && i == (SubdivPtsSize-1)){
       ni = 0;
     }
-    ArrayList<Integer,Integer> ptpair = new ArrayList<Integer,Integer>();
+    ArrayList<Integer> ptpair = new ArrayList<Integer>();
     ptpair.add(i);
     ptpair.add(ni);
     if (inc % 2 == 0){

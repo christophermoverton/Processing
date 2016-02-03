@@ -18,7 +18,7 @@ class Polygon{
   HashMap<Integer,Integer> ptToSubdivPt;
   ArrayList<PVector> subdivpts;
   HashMap<ArrayList<Integer>,Boolean> SubdivPtPairtoThick;
-  //HashMap<Integer,Integer> subdivPtToPt;
+  HashMap<Integer,Integer> subdivPtToPt;
   Polygon(ArrayList<PVector> verts, PVector PCent){
     vertices = verts;
     center = PCent;
@@ -32,15 +32,15 @@ class Polygon{
     edges = new ArrayList<Edge>();
     pointsToEdge = new HashMap<ArrayList<PVector>,Integer>();
   }
-  //void subdivPtToPtbuild(){
-  // //assuming that ptToSubdivPt exists
-  // subdivPtToPt = new HashMap<Integer,Integer>();
-  // for (Map.Entry me : ptToSubdivPt.entrySet()) {
-  //   int value = me.getKey();
-  //   int ikey = me.getValue();
-  //   subdivPtToPt.put(ikey,value);
-  // }
-  //}
+  void subdivPtToPtbuild(){
+  //assuming that ptToSubdivPt exists
+  subdivPtToPt = new HashMap<Integer,Integer>();
+  for (Map.Entry<Integer,Integer> me : ptToSubdivPt.entrySet()) {
+    int value = me.getKey();
+    int ikey = me.getValue();
+    subdivPtToPt.put(ikey,value);
+  }
+  }
 }
 
 class Edge{
@@ -197,7 +197,7 @@ float distPointToLine(PVector p0, PVector p1, PVector p2){
   PVector p0p1 = PVector.sub(p0,p1);
   PVector p0p2 = PVector.sub(p0,p2);
   PVector p2p1 = PVector.sub(p2,p1);
-  PVector p0p1Cp0p2 = PVector.cross(p0p1,p0p2);
+  PVector p0p1Cp0p2 = p0p1.cross(p0p2);
   float dp2p1 = p2p1.mag();
   float dp0p1Cp0p2 = p0p1Cp0p2.mag();
   return dp0p1Cp0p2/dp2p1;
@@ -393,7 +393,7 @@ void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out){
 void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
   if (cpoly.vertices.size() == 3){
     for (int i = 0; i < cpoly.vertices.size();i++){
-      float ni = (i+1) % cpoly.vertices.size();
+      int ni = (i+1) % cpoly.vertices.size();
       //vector in the direction of the vertex from center
       PVector cv = PVector.sub(cpoly.vertices.get(i),cpoly.center);
       float dcv = cv.mag();
@@ -411,7 +411,7 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
       ArrayList<PVector> edgpts = new ArrayList<PVector>();
       edgpts.add(cpoly.vertices.get(i));
       edgpts.add(cpoly.vertices.get(ni));
-      int edgind = cpoly.pointsToEdge.get(edgepts);
+      int edgind = cpoly.pointsToEdge.get(edgpts);
       Edge edge = cpoly.edges.get(edgind);
       float d;
       if (edge.linear){
@@ -425,7 +425,7 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
       out.add(new Circle(centCircle, radius));
     }
   }
-  else if (cpoly.vertices.length == 4){
+  else if (cpoly.vertices.size() == 4){
     for (int i = 0; i < cpoly.edges.size();i++){
       if (cpoly.edges.get(i).thick){
         ArrayList<PVector> pts = new ArrayList<PVector>();
@@ -455,7 +455,7 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
       }
     }
   }
-  else if (cpoly.vertices.length >= 5){
+  else if (cpoly.vertices.size() >= 5){
     float d;
     if (cpoly.edges.get(0).linear){
       d = distPointToLine(cpoly.edges.get(0).p1,cpoly.edges.get(0).p2,cpoly.center);
@@ -533,7 +533,7 @@ void ptSetinPolygon(Polygon cpoly, ArrayList<PVector> pts, ArrayList<PVector> ou
         test1 = true;
         edge.add(cpoly.vertices.get(j));
         edge.add(cpoly.vertices.get((j+1)% cpoly.vertices.size()));
-        edgepts.add(edge);
+        edges.add(edge);
       }
     }
     if (edges.size() == 2){
@@ -541,7 +541,9 @@ void ptSetinPolygon(Polygon cpoly, ArrayList<PVector> pts, ArrayList<PVector> ou
       ArrayList<PVector> edg2 = edges.get(1);
       float x1 = xfromLine(edg1.get(0), edg1.get(1), pts.get(i).y);
       float x2 = xfromLine(edg2.get(0), edg2.get(1), pts.get(i).y);
-      if ( min(x1,x2) <= pts.get(i).x <= max(x1,x2)){
+      boolean e1 = min(x1,x2) <= pts.get(i).x;
+      boolean e2 = pts.get(i).x <= max(x1,x2); 
+      if ( e1 && e2){
         out.add(pts.get(i));
       }
     }
@@ -864,25 +866,25 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       CircleCircleIntersection(pedge.circle, iedge.circle, ipts);
       ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
-      PVector ipt1 = closestPoint(iptsinpoly, pedge.pole1);
+      PVector ipt1 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge2.circle, ipts);
       iptsinpoly = new ArrayList<PVector>();
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
-      PVector ipt2 = closestPoint(iptsinpoly, pedge.pole1);
+      PVector ipt2 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
       ipts = new ArrayList<PVector>();
       ArrayList<Circle> pecCircles = new ArrayList<Circle>();
-      getCentCirclesfromPoles(pedge.pole1, pedge.pole2, centcircles,pecCircles);
+      getCentCirclesfromPoles(pedge.pole1, pedge.pole2, centroidcircles,pecCircles);
       Circle peccircle = pecCircles.get(0);
       CircleCircleIntersection(pedge.circle, peccircle, ipts);
       PVector ipt3 = ipts.get(0);
       PVector ipt4 = ipts.get(1);
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(iedge.circle, peccircle, ipts);
-      PVector ipt5 = closestPoint(ipts, pedge.pole1);
+      PVector ipt5 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole1));
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(iedge2.circle, peccircle, ipts);
-      PVector ipt6 = closestPoint(ipts, pedge.pole1);
+      PVector ipt6 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole1));
       //first polygon is the pole 5 sided polygon
       //get the original edge data...this is inheritance data for parent subdivided
       //edges.
@@ -960,7 +962,7 @@ void Subdivide(float frac, Polygon cpoly){
   ArrayList<Edge> cedges = cpoly.edges;
   ArrayList<PVector> subdivpts = new ArrayList<PVector>();
   HashMap<Integer,Integer> vertsRemap = new HashMap<Integer,Integer>();
-  HashMap<ArrayList<Integer,Integer>,Boolean> SubdivPtPairtoThick = new HashMap<ArrayList<Integer,Integer>,Boolean>();
+  HashMap<ArrayList<Integer>,Boolean> SubdivPtPairtoThick = new HashMap<ArrayList<Integer>,Boolean>();
   for (int i = 0; i < cedges.size(); i++){
     Edge cedge = cedges.get(i);
     Boolean lastEdge = false;

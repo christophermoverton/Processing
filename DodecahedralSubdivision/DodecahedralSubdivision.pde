@@ -985,6 +985,7 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
   //ISPts is the set of circle circle intersection point where the circle intersection
   //is from the centroid circle relative the interior pole arc.
   //pole is indexed on the original polygon vertices not subdivision vertices.
+  //See Dohecahedral Subdivision Rule diagram for modeling help here.
   if (cpoly.vertices.size()==3){
     PVector dPt1 = getOppositePt(cPt1, ISPts);
     PointEdgetoPoly pep1 = new PointEdgetoPoly(3, 4, dPt1, parentEdge1);
@@ -1020,7 +1021,7 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
       }
     }
     else{
-      pep1 = new PointEdgetoPoly(3, 4, dPt2, parentEdge3);
+      pep1 = new PointEdgetoPoly(4, 0, dPt2, parentEdge3);
       if (pole < 2){
         pep2 = new PointEdgetoPoly(0, 1, dPt1, parentEdge2);
       }
@@ -1046,9 +1047,83 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
     (centPolys.get(ni)).addPointEdgetoPoly(pep1);
     (centPolys.get(ni2)).addPointEdgetoPoly(pep2);
   }
-
 }
 
+void writeClosePoint(Polygon cpoly, int pole,  PVector Pt1, int poleiter,
+                        Edge parentEdge1,  
+                        ArrayList<PolyHolding> centPolys){
+    //poleiter is the iteration on the present pole.  There are 2 forware arc iterations per
+    //pole when winding on the edge to edges mappings in the buildInteriorPolyons method
+    //for a 3 gon subdivision build, and 3 forward arc iterations per pole on the 4 gon,
+    //and 5 forward arc iterations per pole on the 5 gon (given there is only one pole centroid).
+    // A forward arc is the 'next' interior edge arc as opposed to 'previous' 
+    //arc edge where 'next' is characterized one closest to the next pole (pole+1) mod poleset
+    //and 'prev' is characterized as the interior arc closest to the previous pole (pole-1) mod poleset.
+    //'forward' arcs are only considered in this write method.
+    //The poleiteration is the number of times in winding around the centPoly.
+    PointEdgetoPoly pep1;
+    if (cpoly.vertices.size()==3){
+      
+      if (poleiter == 0){
+        pep1 = new PointEdgetoPoly(4, 0, Pt1, parentEdge1);
+      }
+      else if (poleiter == 1){
+        pep1 = new PointEdgetoPoly(0, 1, Pt1, parentEdge1);
+      }
+      if (pole == 0 && poleiter == 0){
+        pep1 = new PointEdgetoPoly(0, 1, Pt1, parentEdge1);
+      }
+      else if (pole == 0 && poleiter == 1){
+        pep1 = new PointEdgetoPoly(4, 0, Pt1, parentEdge1);
+      }
+      (centPolys.get(pole)).addPointEdgetoPoly(pep1);
+    }
+    if (cpoly.vertices.size()==4){
+      int ni;
+      int[] polev1 = {3,1,2};
+      int[] polev2 = {1,2,3};
+      if (pole == 0){
+        ni = 1;
+      }
+      else if (pole==1){
+        ni = 0;
+      }
+      else if (pole==2){
+        ni = 0;
+      }
+      else{
+        ni = 1;
+      }
+      if (ni == 1){
+        pep1 = new PointEdgetoPoly(polev2[poleiter], polev2[poleiter]+1, 
+                                   Pt1, parentEdge1);
+      }
+      else{
+        pep1 = new PointEdgetoPoly(polev1[poleiter], polev1[poleiter]+1, 
+                                   Pt1, parentEdge1);
+      }
+      (centPolys.get(ni)).addPointEdgetoPoly(pep1);
+    }
+    else{
+      pep1 = new PointEdgetoPoly(poleiter, poleiter+1, Pt1, parentEdge1);
+      (centPolys.get(0)).addPointEdgetoPoly(pep1);
+    }
+}
+
+void initializePoleiterationMap(Polygon cpoly, HashMap<Integer,Integer> poleiteration){
+  if (cpoly.vertices.size() == 3){
+    poleiteration.put(0,0);
+    poleiteration.put(1,0);
+    poleiteration.put(2,0);
+  }
+  else if (cpoly.vertices.size() == 4){
+    poleiteration.put(0,0);
+    poleiteration.put(1,0);
+  }
+  else{
+    poleiteration.put(0,0);
+  }
+}
 void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles, 
                            CircleMap circlemap, ArrayList<Polygon> outPolys){
   
@@ -1060,6 +1135,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
   // then the 4 gons are addressed 3,4,5, and finally the interior most polygon
   //at address 6.
   initializePolyHoldings(cpoly, centPolys);
+  HashMap<Integer,Integer> poleiteration = new HashMap<Integer,Integer>();
+  initializePoleiterationMap(cpoly, poleiteration);
   for (Map.Entry<Edge,ArrayList<Edge>> me : interioredges.entrySet()) {
     Edge pedge = me.getKey();
     Edge iedge = me.getValue().get(0);
@@ -1077,7 +1154,9 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       PVector ipt2 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
       ipts = new ArrayList<PVector>();
       ArrayList<Circle> pecCircles = new ArrayList<Circle>();
-      getCentCirclesfromPoles(pedge.pole1, pedge.pole2, centroidcircles,pecCircles);
+      int vp1 = cpoly.subdivPtToPt.get(pedge.pole1);
+      int vp2 = cpoly.subdivPtToPt.get(pedge.pole2);
+      getCentCirclesfromPoles(vp1, vp2, centroidcircles,pecCircles);
       Circle peccircle = pecCircles.get(0);
       CircleCircleIntersection(pedge.circle, peccircle, ipts);
       PVector ipt3 = ipts.get(0);
@@ -1128,7 +1207,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //check to see that centroid circle intersect distant points need to be
       //written for current polygon type. 
-      int vpole = cpoly.subdivPtToPt.get(pedge.pole);
+      int vpole = cpoly.subdivPtToPt.get(pedge.pole1);
       writeDistantPoints(cpoly, vpole, ipts, ipts2, ipt5, ipt6, iedge, iedge2,
                         new Edge(peccircle), centPolys);
       //polygon 3
@@ -1144,8 +1223,12 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
                                 pedge,iedge};
       buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
     }
+    else{
+    }
   }
 }
+
+
 
 void buildThickEdgeDat(Edge cedge, HashMap<Integer,Integer> vertsRemap, 
                        int SubdivPtsSize, Boolean lastEdge,

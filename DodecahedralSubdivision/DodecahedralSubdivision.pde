@@ -1074,6 +1074,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       PVector ept1 = cpoly.subdivpts.get(pedge.pole1);
       PVector ept2 = cpoly.subdivpts.get(pedge.interiornp1);
       PVector ept3 = cpoly.subdivpts.get(pedge.interiornp2);
+      PVector ept4 = pedge.p1;
+      PVector ept5 = pedge.p2;
       PVector[] verts = {ept1,ept2,ipt5,ipt6,ept3};
       ArrayList<PVector> vertsal = new ArrayList<PVector>();
       Collections.addAll(vertsal,verts);
@@ -1093,6 +1095,18 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       int vpole = cpoly.subdivPtToPt.get(pedge.pole);
       writeDistantPoints(cpoly, vpole, ipts, ipts2, ipt5, ipt6, iedge, iedge2,
                         new Edge(peccircle), centPolys);
+      //polygon 3
+      verts = new PVector[] {ept2,ept4,ipt3,ipt5};
+      edgThcks = new Boolean[] {false,true,false,true};
+      ParentEdges = new Edge[] {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal)),
+                                pedge, new Edge(peccircle), iedge};
+      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //polygon 4
+      verts = new PVector[] {ipt5,ipt3,ipt1};
+      edgThcks = new Boolean[] {false,false,false};
+      ParentEdges = new Edge[] {new Edge(peccircle),
+                                pedge,iedge};
+      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
     }
   }
 }

@@ -1003,10 +1003,46 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
   }
   else if (cpoly.vertices.size()==4){
     PVector dPt1 = getOppositePt(cPt1, ISPts);
-    PointEdgetoPoly pep1 = new PointEdgetoPoly(3, 4, dPt1, parentEdge1);
-    PointEdgetoPoly pep2 = new PointEdgetoPoly(0, 1, dPt1, parentEdge3);
-    int ni = (pole+1) % 3;
-    int ni2 = 3+ni;
+    PVector dPt2 = getOppositePt(cPt2, ISPts2);
+    PointEdgetoPoly pep1;
+    PointEdgetoPoly pep2;
+    //PointEdgetoPoly pep3;
+    //PointEdgetoPoly pep4; 
+    //pep1 = new PointEdgetoPoly(3, 4, dPt1, parentEdge1);
+    //pep2 = new PointEdgetoPoly(0, 1, dPt1, parentEdge3);
+    if (pole%2 == 0){
+      pep1 = new PointEdgetoPoly(0, 1, dPt1, parentEdge1);
+      if (pole < 2){
+        pep2 = new PointEdgetoPoly(1, 2, dPt1, parentEdge3);
+      }
+      else{
+        pep2 = new PointEdgetoPoly(3, 0, dPt1, parentEdge3);
+      }
+    }
+    else{
+      pep1 = new PointEdgetoPoly(3, 4, dPt2, parentEdge3);
+      if (pole < 2){
+        pep2 = new PointEdgetoPoly(0, 1, dPt1, parentEdge2);
+      }
+      else{
+        pep2 = new PointEdgetoPoly(2, 3, dPt1, parentEdge2);
+      }
+      //pep2 = new PointEdgetoPoly(0, 1, dPt2, parentEdge2);
+    }
+    int ni;
+    if (pole == 0){
+      ni = 1;
+    }
+    else if (pole==1){
+      ni = 0;
+    }
+    else if (pole==2){
+      ni = 0;
+    }
+    else{
+      ni = 1;
+    }
+    int ni2 = 3;
     (centPolys.get(ni)).addPointEdgetoPoly(pep1);
     (centPolys.get(ni2)).addPointEdgetoPoly(pep2);
   }

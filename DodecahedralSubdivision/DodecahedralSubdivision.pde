@@ -32,6 +32,19 @@ class Polygon{
     edges = new ArrayList<Edge>();
     pointsToEdge = new HashMap<ArrayList<PVector>,Integer>();
   }
+  Polygon(){
+    vertices = new ArrayList<PVector>();
+    center = new PVector();
+    arcs = new ArrayList<Edge>();
+    arcincs = new ArrayList<Float>();
+    spokenorms = new ArrayList<PVector>();
+    sincvals = new ArrayList<Float>();
+
+    intpolypoints = new ArrayList<PVector>();
+    p2s = new ArrayList<PVector>();
+    edges = new ArrayList<Edge>();
+    pointsToEdge = new HashMap<ArrayList<PVector>,Integer>();
+  }
   void subdivPtToPtbuild(){
   //assuming that ptToSubdivPt exists
   subdivPtToPt = new HashMap<Integer,Integer>();
@@ -144,6 +157,9 @@ class Circle{
 }
 
 class CircleMap{
+  //this class is used in constructing subdiv points arc edge to paired interior arc
+  //edge mappings...these maps have a winding around the polygon. 
+  //
   HashMap<ArrayList<Integer>,Circle> vertPairToCircle;  //vertex pairs (indexing) to circle
   HashMap<Circle,ArrayList<Circle>> interiorCircles;  // circle to interior circle mapping
   HashMap<Circle, ArrayList<Integer>> circleToVertPair;
@@ -153,6 +169,78 @@ class CircleMap{
     interiorCircles = new HashMap<Circle,ArrayList<Circle>>();
     circleToVertPair = new HashMap<Circle,ArrayList<Integer>>();
     interiorEdges = new HashMap<Edge,ArrayList<Edge>>();
+  }
+}
+
+class PolyHolding{
+  //pre appending class as an intermediary storage container used when 
+  //constructing polygon data...for ease in preappending polygon data when this
+  //is finally sent to a given build polygon method call.
+  HashMap<ArrayList<Integer>,Integer> ptsToEdge;
+  ArrayList<PVector> vertices;
+  ArrayList<Edge> parentEdges;
+  HashMap<Integer,Integer> vertReIndexing;
+  PVector[] verticesArray;
+  Edge[] parentEdgesArray;
+  PolyHolding(){
+    ptsToEdge = new HashMap<ArrayList<Integer>,Integer>(); //reindexed mapped pair to current edge index mapping
+    vertices = new ArrayList<PVector>();
+    parentEdges = new ArrayList<Edge>();
+    vertReIndexing = new HashMap<Integer,Integer>();
+  }
+  void addVertex(PVector pt, int posMap){
+    //posMap is the desired winding order map for the constructed polygon
+    //assumed clockwise ordering
+    vertices.add(pt);
+    vertReIndexing.put(vertices.size()-1,posMap);
+  }
+  void addEdge(Integer pt1ind, Integer pt2ind, Edge edge){
+    //pt1 index is the desired winding order map for the constructed polygon
+    //assumed clockwise winding.
+    ArrayList<Integer> ptpair = new ArrayList();
+    ptpair.add(pt1ind);
+    ptpair.add(pt2ind);
+    parentEdges.add(edge);
+    ptsToEdge.put(ptpair,parentEdges.size()-1);
+  }
+  
+  void addPointEdgetoPoly(PointEdgetoPoly pointedgetopoly){
+    //when appending a point and edge.  The point on edge is assumed leading on the 
+    //clockwise winding.  Filling the polygon thus means edges are never paired with 
+    // a non leading point on the clockwise winding.  
+    addVertex(pointedgetopoly.PolyHPt, pointedgetopoly.PolyHPtIndex);
+    addEdge(pointedgetopoly.PolyHPtIndex, pointedgetopoly.PolyHPtIndex2, 
+            pointedgetopoly.PolyHParentEdge);
+  }
+  
+  void writeArrayData(){
+    //This is called after all data has been populated in non array object type members
+    verticesArray = new PVector[vertices.size()];
+    parentEdgesArray = new Edge[parentEdges.size()];
+    for (int i = 0; i < vertices.size(); i++){
+      int j = vertReIndexing.get(i);
+      int nj = (j+1)%vertices.size();
+      verticesArray[j] = vertices.get(i);
+      ArrayList<Integer> pts = new ArrayList<Integer>();
+      pts.add(j);
+      pts.add(nj);
+      parentEdgesArray[j] = parentEdges.get(ptsToEdge.get(pts));
+    }
+  }
+}
+
+class PointEdgetoPoly{
+  //simple point to edger to polygon index write interface for PolyHolding 
+  int PolyHPtIndex;
+  int PolyHPtIndex2;  //this is the second PolyH pt index for edge pairing.
+  PVector PolyHPt;
+  Edge PolyHParentEdge; 
+  PointEdgetoPoly(int polyhptindex, int polyhptindex2, PVector polyhpt, 
+                  Edge polyhparentedge){
+    PolyHPtIndex = polyhptindex;
+    PolyHPtIndex2 = polyhptindex2;
+    PolyHPt = polyhpt;
+    PolyHParentEdge = polyhparentedge; 
   }
 }
 
@@ -775,7 +863,7 @@ void getWindingOrder(int v1, int v2, int modop, ArrayList<Integer> out){
 void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
                          Integer np2index, Edge parent, Polygon opoly,
                          Integer op1index, Integer op2index,
-                          Edge out){
+                          ArrayList<Edge> outs){
   //function call is given from edge data constructed from point subdivision data 
   //on the polygon only...doesn't work for interior subdivision points.
   //Use alternate overloaded method for the other edge construction type for 
@@ -790,7 +878,8 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
   if (parent.linear){
     //this constructor call is made..
     //Edge(PVector P1, PVector P2, boolean Thick, int P1index, int P2index)
-    out = new Edge(pt1, pt2, ethick, np1index, np2index);
+    Edge out = new Edge(pt1, pt2, ethick, np1index, np2index);
+    outs.add(out);
   }
   else{
     //Edge(PVector P1, PVector P2, boolean Thick, PVector GenCenter,
@@ -799,14 +888,15 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
     PVector CToP2 = PVector.sub(pt2,parent.genCenter);
     float a1 = CToP1.heading();
     float a2 = CToP2.heading();
-    out = new Edge(pt1, pt2, ethick, parent.genCenter, 
+    Edge out = new Edge(pt1, pt2, ethick, parent.genCenter, 
                    parent.genR, a1, a2, np1index, np2index);
+    outs.add(out);
   }
 }
 
 void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
                          Integer np2index, Edge parent, Boolean edgeThick,
-                          Edge out){
+                          ArrayList<Edge> outs){
   //alternate overloaded method for the other edge construction type for 
   //interior subdivision points.
   //opoly is the original polygon (subdivision point set).
@@ -816,7 +906,8 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
   if (parent.linear){
     //this constructor call is made..
     //Edge(PVector P1, PVector P2, boolean Thick, int P1index, int P2index)
-    out = new Edge(pt1, pt2, edgeThick, np1index, np2index);
+    Edge out = new Edge(pt1, pt2, edgeThick, np1index, np2index);
+    outs.add(out);
   }
   else{
     //Edge(PVector P1, PVector P2, boolean Thick, PVector GenCenter,
@@ -825,38 +916,114 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
     PVector CToP2 = PVector.sub(pt2,parent.genCenter);
     float a1 = CToP1.heading();
     float a2 = CToP2.heading();
-    out = new Edge(pt1, pt2, edgeThick, parent.genCenter, 
+    Edge out = new Edge(pt1, pt2, edgeThick, parent.genCenter, 
                    parent.genR, a1, a2, np1index, np2index);
+    outs.add(out);
   }
 }
 
 void buildInteriorPolygon(PVector[] verts, Boolean[] edgThcks, Edge[] ParentEdges,
-                          Polygon pout){
+                          ArrayList<Polygon> pouts){
   HashMap<ArrayList<PVector>,Integer> pointsToEdge = new HashMap<ArrayList<PVector>,Integer>();
   ArrayList<Edge> Edges = new ArrayList<Edge>();
   for (int i = 0; i < verts.length; i++){
     int ni = (i+1)%verts.length;
-    Edge out = new Edge();
-    buildEdgefromParent(verts[i], verts[ni], i, ni, ParentEdges[i], edgThcks[i], out);
+    buildEdgefromParent(verts[i], verts[ni], i, ni, ParentEdges[i], edgThcks[i], Edges);
     ArrayList<PVector> ptpairal = new ArrayList<PVector>();
     PVector[] ptpair = {verts[i],verts[ni]};
     Collections.addAll(ptpairal,ptpair);
-    pointsToEdge.put(ptpairal,Edges.size());
-    Edges.add(out);
+    pointsToEdge.put(ptpairal,Edges.size()-1);
+    //Edges.add(out);
   }
   ArrayList<PVector> vertsal = new ArrayList<PVector>();
   Collections.addAll(vertsal,verts);
   PVector PCenter = new PVector(0.0,0.0,0.0);
   PolygonCentroid(vertsal, PCenter);
-  pout = new Polygon(vertsal, PCenter);
+  Polygon pout = new Polygon(vertsal, PCenter);
   pout.edges = Edges;
   pout.pointsToEdge = pointsToEdge;
+  pouts.add(pout);
+}
+
+PVector getOppositePt(PVector pt, ArrayList<PVector> pts){
+  //opposite point in a 2 point set
+  int ni = (pts.indexOf(pt)+1 )% pts.size();
+  return pts.get(ni);
+}
+
+void initializePolyHoldings(Polygon cpoly, ArrayList<PolyHolding> centPolys){
+  int iSize = 0;
+  if (cpoly.vertices.size() == 3){
+    iSize = 7;
+  }
+  else if (cpoly.vertices.size() == 4){
+    iSize = 3;
+  }
+  else if (cpoly.vertices.size() >= 5){
+    iSize = 1;
+  }
+  for (int i = 0; i < iSize; i++){
+    PolyHolding polyholding = new PolyHolding();
+    centPolys.add(polyholding);
+  }
+}
+
+void getPolyHoldindices(Polygon cpoly, Integer subdivPole){
+  if (cpoly.vertices.size() == 3){
+     int pole = cpoly.subdivPtToPt.get(subdivPole);
+     int prevpole = (pole-1)%3;
+     int nextpole = (pole+1)%3;
+  }
+}
+
+void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
+                        ArrayList<PVector> ISPts2, PVector cPt1, PVector cPt2,
+                        Edge parentEdge1, Edge parentEdge2,
+                        Edge parentEdge3, ArrayList<PolyHolding> centPolys){
+  //checks polygon type and indicates whether distant interior subdivision
+  //circle intersect points need to be appended to polyholding
+  //ISPts is the set of circle circle intersection point where the circle intersection
+  //is from the centroid circle relative the interior pole arc.
+  //pole is indexed on the original polygon vertices not subdivision vertices.
+  if (cpoly.vertices.size()==3){
+    PVector dPt1 = getOppositePt(cPt1, ISPts);
+    PointEdgetoPoly pep1 = new PointEdgetoPoly(3, 4, dPt1, parentEdge1);
+    PointEdgetoPoly pep2 = new PointEdgetoPoly(0, 1, dPt1, parentEdge3);
+    PVector dPt2 = getOppositePt(cPt2, ISPts2);
+    PointEdgetoPoly pep3 = new PointEdgetoPoly(1, 2, dPt2, parentEdge3);
+    PointEdgetoPoly pep4 = new PointEdgetoPoly(3, 0, dPt2, parentEdge2);
+    int ni = (pole+1) % 3;
+    int pi = (pole-1) % 3;
+    int ni2 = 3+ni;
+    int pi2 = 3+pi;
+    (centPolys.get(ni)).addPointEdgetoPoly(pep1);
+    (centPolys.get(ni2)).addPointEdgetoPoly(pep2);
+    (centPolys.get(pi)).addPointEdgetoPoly(pep3);
+    (centPolys.get(pi2)).addPointEdgetoPoly(pep4);
+  }
+  else if (cpoly.vertices.size()==4){
+    PVector dPt1 = getOppositePt(cPt1, ISPts);
+    PointEdgetoPoly pep1 = new PointEdgetoPoly(3, 4, dPt1, parentEdge1);
+    PointEdgetoPoly pep2 = new PointEdgetoPoly(0, 1, dPt1, parentEdge3);
+    int ni = (pole+1) % 3;
+    int ni2 = 3+ni;
+    (centPolys.get(ni)).addPointEdgetoPoly(pep1);
+    (centPolys.get(ni2)).addPointEdgetoPoly(pep2);
+  }
+
 }
 
 void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles, 
                            CircleMap circlemap, ArrayList<Polygon> outPolys){
   
   HashMap<Edge,ArrayList<Edge>> interioredges = circlemap.interiorEdges;
+  ArrayList<PolyHolding> centPolys = new ArrayList<PolyHolding>();
+  //arraylist polyholding container is addressed in winding order with 
+  //interior most polygons around the centroid. For example, on the 3 gon 
+  // the poles are used in indexing the 5 gons with reserved addresses 0,1,2
+  // then the 4 gons are addressed 3,4,5, and finally the interior most polygon
+  //at address 6.
+  initializePolyHoldings(cpoly, centPolys);
   for (Map.Entry<Edge,ArrayList<Edge>> me : interioredges.entrySet()) {
     Edge pedge = me.getKey();
     Edge iedge = me.getValue().get(0);
@@ -882,8 +1049,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(iedge.circle, peccircle, ipts);
       PVector ipt5 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole1));
-      ipts = new ArrayList<PVector>();
-      CircleCircleIntersection(iedge2.circle, peccircle, ipts);
+      ArrayList<PVector> ipts2 = new ArrayList<PVector>();
+      CircleCircleIntersection(iedge2.circle, peccircle, ipts2);
       PVector ipt6 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole1));
       //first polygon is the pole 5 sided polygon
       //get the original edge data...this is inheritance data for parent subdivided
@@ -914,16 +1081,18 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       
       Edge[] ParentEdges = {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal)),iedge,new Edge(peccircle),iedge2,
                             cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal2))};
-      Polygon pout;
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, pout);
-      outPolys.add(pout);
+      
+      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //polygon 2
-      PVector[] verts = {ipt5,ipt1,ipt2,ipt6};
-      Boolean[] edgThcks = {false,true,false,true};
-      Edge[] ParentEdges = {iedge,pedge, iedge2, new Edge(peccircle)};
-      Polygon pout;
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, pout);
-      outPolys.add(pout);
+      verts = new PVector[] {ipt5,ipt1,ipt2,ipt6};
+      edgThcks = new Boolean[] {false,true,false,true};
+      ParentEdges = new Edge[] {iedge,pedge,iedge2, new Edge(peccircle)};
+      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //check to see that centroid circle intersect distant points need to be
+      //written for current polygon type. 
+      int vpole = cpoly.subdivPtToPt.get(pedge.pole);
+      writeDistantPoints(cpoly, vpole, ipts, ipts2, ipt5, ipt6, iedge, iedge2,
+                        new Edge(peccircle), centPolys);
     }
   }
 }

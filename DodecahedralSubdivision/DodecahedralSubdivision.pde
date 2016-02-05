@@ -1251,8 +1251,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       getCentCirclesfromPoles(vp1, vp2, centroidcircles,pecCircles);
       Circle peccircle = pecCircles.get(0);
       CircleCircleIntersection(pedge.circle, peccircle, ipts);
-      PVector ipt3 = ipts.get(0);
-      PVector ipt4 = ipts.get(1);
+      PVector ipt3 = closestPoint(ipts, cpoly.subdivpts.get(pedge.interiornp2));
+      PVector ipt4 = getOppositePt(ipt3, ipts);
       ipts = new ArrayList<PVector>();
       PVector ipt5;
       PVector ipt6;
@@ -1260,8 +1260,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       //have non pole type leading edge maps.
       Circle peccircle2 = pecCircles.get(1);
       CircleCircleIntersection(pedge.circle, peccircle2, ipts);
-      ipt5 = ipts.get(0);
-      ipt6 = ipts.get(1);
+      ipt5 = closestPoint(ipts, cpoly.subdivpts.get(pedge.interiornp1));
+      ipt6 = getOppositePt(ipt5, ipts);
       
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(iedge.circle, peccircle, ipts);
@@ -1299,7 +1299,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       PVector ept3 = cpoly.subdivpts.get(pedge.interiornp2);
       PVector ept4 = pedge.p1;
       PVector ept5 = pedge.p2;
-      PVector[] verts = {ept2,ipt7,ipt9,ept3};
+      PVector[] verts = {ept2,ipt7,ipt9,ipt8, ept3};
       ArrayList<PVector> vertsal = new ArrayList<PVector>();
       Collections.addAll(vertsal,verts);
       Boolean[] edgThcks = {true,true,true,true,true}; 
@@ -1322,14 +1322,26 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       writeClosePoint(cpoly, vp1,  ipt1, poleiteration.get(vp1), iedge,  
                       centPolys);
       iteratePoleiterator(vp1, poleiteration);
-      //polygon 3
-      verts = new PVector[] {ept2,ept4,ipt3,ipt5};
-      edgThcks = new Boolean[] {false,true,false,true};
-      ParentEdges = new Edge[] {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal)),
-                                pedge, new Edge(peccircle), iedge};
+      //polygon 3 center triangle 
+      verts = new PVector[] {ipt9,ipt3,ipt5};
+      edgThcks = new Boolean[] {false,false,false};
+      ParentEdges = new Edge[] { new Edge(peccircle2),
+                                pedge, new Edge(peccircle)};
       buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //polygon 4
-      verts = new PVector[] {ipt5,ipt3,ipt1};
+      verts = new PVector[] {ipt9,ipt5,ipt2,ipt8};
+      edgThcks = new Boolean[] {false,true,false,true};
+      ParentEdges = new Edge[] {new Edge(peccircle),
+                                pedge, iedge2, new Edge(peccircle2)};
+      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //polygon 5
+      verts = new PVector[] {ept2,ept4,ipt4,ipt7};
+      edgThcks = new Boolean[] {false,true,false,true};
+      ParentEdges = new Edge[] {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal2)),
+                                pedge, new Edge(peccircle), iedge};
+      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //polygon 6
+      verts = new PVector[] {ipt7,ipt4,ipt1};
       edgThcks = new Boolean[] {false,false,false};
       ParentEdges = new Edge[] {new Edge(peccircle),
                                 pedge,iedge};

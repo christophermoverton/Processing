@@ -1172,7 +1172,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       PVector ipt5 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole1));
       ArrayList<PVector> ipts2 = new ArrayList<PVector>();
       CircleCircleIntersection(iedge2.circle, peccircle, ipts2);
-      PVector ipt6 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole1));
+      PVector ipt6 = closestPoint(ipts2, cpoly.subdivpts.get(pedge.pole1));
       //first polygon is the pole 5 sided polygon
       //get the original edge data...this is inheritance data for parent subdivided
       //edges.
@@ -1253,6 +1253,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       CircleCircleIntersection(pedge.circle, peccircle, ipts);
       PVector ipt3 = ipts.get(0);
       PVector ipt4 = ipts.get(1);
+      ipts = new ArrayList<PVector>();
       PVector ipt5;
       PVector ipt6;
       //note we shouldn't have to case structure for 5gons since they shouldn't 
@@ -1264,22 +1265,28 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(iedge.circle, peccircle, ipts);
-      PVector ipt7 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole1));
+      PVector ipt7 = closestPoint(ipts, cpoly.subdivpts.get(pedge.interiornp1));
       ArrayList<PVector> ipts2 = new ArrayList<PVector>();
-      CircleCircleIntersection(iedge2.circle, peccircle, ipts2);
-      PVector ipt8 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole1));
+      CircleCircleIntersection(iedge2.circle, peccircle2, ipts2);
+      PVector ipt8 = closestPoint(ipts2, cpoly.subdivpts.get(pedge.interiornp2));
+      ArrayList<PVector> ipts3 = new ArrayList<PVector>();
+      CircleCircleIntersection(peccircle, peccircle2, ipts3);
+      PVector ipt9 = closestPoint(ipts3, cpoly.subdivpts.get(pedge.interiornp1));
+      //ArrayList<PVector> ipts4 = new ArrayList<PVector>();
+      //CircleCircleIntersection(iedge2.circle, peccircle2, ipts4);
+      //PVector ipt10 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole2));
       //first polygon is the pole 5 sided polygon
       //get the original edge data...this is inheritance data for parent subdivided
       //edges.
       int opi = cpoly.subdivPtToPt.get(pedge.pole);
-      int nopi = (opi+1)%cpoly.vertices.size();
-      int popi = (opi-1)%cpoly.vertices.size();
-      ArrayList<Integer> polpair = new ArrayList<Integer>();
-      getWindingOrder(opi, nopi, cpoly.vertices.size(), polpair);
-      PVector[] polpairvec= {cpoly.vertices.get(polpair.get(0)), 
-                             cpoly.vertices.get(polpair.get(1))};
-      ArrayList<PVector> polpairvecal = new ArrayList<PVector>();
-      Collections.addAll(polpairvecal,polpairvec);
+      //int nopi = (opi+1)%cpoly.vertices.size();
+      int popi = cpoly.subdivPtToPt.get(pedge.pole2);
+      //ArrayList<Integer> polpair = new ArrayList<Integer>();
+      //getWindingOrder(opi, nopi, cpoly.vertices.size(), polpair);
+      //PVector[] polpairvec= {cpoly.vertices.get(polpair.get(0)), 
+      //                       cpoly.vertices.get(polpair.get(1))};
+      //ArrayList<PVector> polpairvecal = new ArrayList<PVector>();
+      //Collections.addAll(polpairvecal,polpairvec);
       ArrayList<Integer> polpair2 = new ArrayList<Integer>();
       getWindingOrder(opi, popi, cpoly.vertices.size(), polpair2);
       PVector[] polpairvec2= {cpoly.vertices.get(polpair2.get(0)), 
@@ -1287,30 +1294,30 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ArrayList<PVector> polpairvecal2 = new ArrayList<PVector>();
       Collections.addAll(polpairvecal2,polpairvec2);      
       //1rst polygon//
-      PVector ept1 = cpoly.subdivpts.get(pedge.pole1);
+      //PVector ept1 = cpoly.subdivpts.get(pedge.pole1);
       PVector ept2 = cpoly.subdivpts.get(pedge.interiornp1);
       PVector ept3 = cpoly.subdivpts.get(pedge.interiornp2);
       PVector ept4 = pedge.p1;
       PVector ept5 = pedge.p2;
-      PVector[] verts = {ept1,ept2,ipt5,ipt6,ept3};
+      PVector[] verts = {ept2,ipt7,ipt9,ept3};
       ArrayList<PVector> vertsal = new ArrayList<PVector>();
       Collections.addAll(vertsal,verts);
       Boolean[] edgThcks = {true,true,true,true,true}; 
       
-      Edge[] ParentEdges = {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal)),iedge,new Edge(peccircle),iedge2,
+      Edge[] ParentEdges = {iedge,new Edge(peccircle),new Edge(peccircle2),iedge2,
                             cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal2))};
       
       buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //polygon 2
-      verts = new PVector[] {ipt5,ipt1,ipt2,ipt6};
+      verts = new PVector[] {ipt7,ipt1,ipt2,ipt9};
       edgThcks = new Boolean[] {false,true,false,true};
-      ParentEdges = new Edge[] {iedge,pedge,iedge2, new Edge(peccircle)};
+      ParentEdges = new Edge[] {iedge,pedge,new Edge(peccircle2), new Edge(peccircle)};
       buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //check to see that centroid circle intersect distant points need to be
       //written for current polygon type. 
-      int vpole = cpoly.subdivPtToPt.get(pedge.pole1);
-      writeDistantPoints(cpoly, vpole, ipts, ipts2, ipt5, ipt6, iedge, iedge2,
-                        new Edge(peccircle), centPolys);
+      //int vpole = cpoly.subdivPtToPt.get(pedge.pole1);
+      //writeDistantPoints(cpoly, vpole, ipts, ipts2, ipt5, ipt6, iedge, iedge2,
+      //                  new Edge(peccircle), centPolys);
       //write nearest points 
       writeClosePoint(cpoly, vp1,  ipt1, poleiteration.get(vp1), iedge,  
                       centPolys);

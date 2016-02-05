@@ -242,6 +242,12 @@ class PointEdgetoPoly{
     PolyHPt = polyhpt;
     PolyHParentEdge = polyhparentedge; 
   }
+  PointEdgetoPoly(){
+    PolyHPtIndex = 0;
+    PolyHPtIndex2 = 0;
+    PolyHPt = new PVector(0.0,0.0,0.0);
+    PolyHParentEdge = new Edge();
+  }
 }
 
 void CircleCircleIntersection(Circle c1, Circle c2, ArrayList<PVector> ipts){
@@ -1005,8 +1011,8 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
   else if (cpoly.vertices.size()==4){
     PVector dPt1 = getOppositePt(cPt1, ISPts);
     PVector dPt2 = getOppositePt(cPt2, ISPts2);
-    PointEdgetoPoly pep1;
-    PointEdgetoPoly pep2;
+    PointEdgetoPoly pep1 = new PointEdgetoPoly();
+    PointEdgetoPoly pep2 = new PointEdgetoPoly();
     //PointEdgetoPoly pep3;
     //PointEdgetoPoly pep4; 
     //pep1 = new PointEdgetoPoly(3, 4, dPt1, parentEdge1);
@@ -1049,6 +1055,19 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
   }
 }
 
+void writeDistantPointNonPolePass(Polygon cpoly,int pole, PVector cPt1,
+                        Edge parentEdge1, ArrayList<PolyHolding> centPolys){
+  //an alterate distant point write method to PolyHolding Class on a non pole pass.
+  //Special case write method only...only for 3 gon original polygon type.
+  //inputting 'forward' pole on a two pole differenced arc.
+  if (cpoly.vertices.size() == 3){
+    int npole = (pole+1) % 3;
+    int nnpole = (npole+1) % 3;
+    PointEdgetoPoly pep1 = new PointEdgetoPoly(npole, nnpole, cPt1, parentEdge1);
+    (centPolys.get(7)).addPointEdgetoPoly(pep1);
+  }
+}
+
 void writeClosePoint(Polygon cpoly, int pole,  PVector Pt1, int poleiter,
                         Edge parentEdge1,  
                         ArrayList<PolyHolding> centPolys){
@@ -1061,7 +1080,7 @@ void writeClosePoint(Polygon cpoly, int pole,  PVector Pt1, int poleiter,
     //and 'prev' is characterized as the interior arc closest to the previous pole (pole-1) mod poleset.
     //'forward' arcs are only considered in this write method.
     //The poleiteration is the number of times in winding around the centPoly.
-    PointEdgetoPoly pep1;
+    PointEdgetoPoly pep1 = new PointEdgetoPoly();
     if (cpoly.vertices.size()==3){
       
       if (poleiter == 0){
@@ -1130,6 +1149,18 @@ void iteratePoleiterator(Integer pole, HashMap<Integer,Integer> poleiteration){
   poleiteration.put(pole,ival);
 }
 
+Boolean[] getThickPolybool(PVector[] verts){
+  if (verts.length == 3){
+    return new Boolean[] {false,false,false};
+  }
+  else if (verts.length == 4){
+    return new Boolean[] {false,true,false,true};
+  }
+  else{
+    return new Boolean[] {true,true,true,true,true};
+  }
+}
+
 void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles, 
                            CircleMap circlemap, ArrayList<Polygon> outPolys){
   
@@ -1165,8 +1196,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       getCentCirclesfromPoles(vp1, vp2, centroidcircles,pecCircles);
       Circle peccircle = pecCircles.get(0);
       CircleCircleIntersection(pedge.circle, peccircle, ipts);
-      PVector ipt3 = ipts.get(0);
-      PVector ipt4 = ipts.get(1);
+      PVector ipt3 = closestPoint(ipts, cpoly.subdivpts.get(pedge.interiornp1));
+      PVector ipt4 = getOppositePt(ipt3, ipts);
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(iedge.circle, peccircle, ipts);
       PVector ipt5 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole1));
@@ -1272,9 +1303,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ArrayList<PVector> ipts3 = new ArrayList<PVector>();
       CircleCircleIntersection(peccircle, peccircle2, ipts3);
       PVector ipt9 = closestPoint(ipts3, cpoly.subdivpts.get(pedge.interiornp1));
-      //ArrayList<PVector> ipts4 = new ArrayList<PVector>();
-      //CircleCircleIntersection(iedge2.circle, peccircle2, ipts4);
-      //PVector ipt10 = closestPoint(ipts, cpoly.subdivpts.get(pedge.pole2));
+      PVector ipt10 = getOppositePt(ipt9, ipts3);
       //first polygon is the pole 5 sided polygon
       //get the original edge data...this is inheritance data for parent subdivided
       //edges.
@@ -1315,6 +1344,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //check to see that centroid circle intersect distant points need to be
       //written for current polygon type. 
+      writeDistantPointNonPolePass(cpoly,vp1, ipt10, new Edge(peccircle), centPolys);
       //int vpole = cpoly.subdivPtToPt.get(pedge.pole1);
       //writeDistantPoints(cpoly, vpole, ipts, ipts2, ipt5, ipt6, iedge, iedge2,
       //                  new Edge(peccircle), centPolys);
@@ -1347,6 +1377,13 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
                                 pedge,iedge};
       buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
     }
+  }
+  //add polygons from centPolys
+  for(PolyHolding centPoly : centPolys){
+    centPoly.writeArrayData();
+    Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
+    buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
+                         outPolys);
   }
 }
 
@@ -1382,7 +1419,7 @@ void buildThickEdgeDat(Edge cedge, HashMap<Integer,Integer> vertsRemap,
   }
 }
 
-void Subdivide(float frac, Polygon cpoly){
+void Subdivide(float frac, Polygon cpoly, ArrayList<Polygon> outPolys){
   ArrayList<Edge> cedges = cpoly.edges;
   ArrayList<PVector> subdivpts = new ArrayList<PVector>();
   HashMap<Integer,Integer> vertsRemap = new HashMap<Integer,Integer>();
@@ -1431,5 +1468,8 @@ void Subdivide(float frac, Polygon cpoly){
   //build arc/circle data for polygon
   ArrayList<Circle> centcircles = new ArrayList<Circle>();
   getCentroidCircles(frac, cpoly, centcircles);
+  CircleMap circlemapout = new CircleMap();
+  getSubdivPolyArcData(cpoly, subdivpts, vertsRemap, circlemapout);
+  buildInteriorPolygons(cpoly, centcircles, circlemapout, outPolys);
   
 }

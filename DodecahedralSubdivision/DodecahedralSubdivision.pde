@@ -1,8 +1,15 @@
 import java.util.Map;
 import java.util.Collections;
 import java.util.Collection;
+int SubDivLevel = 2;
+float speed = 1.0; 
+float time = 0.0;
+int NGONs1 = 3; //number of polygon sides
+float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 float atime = 1.0; //(animation time in seconds)
 float frac = .30; //fractional size (recommend that this is < .5)
+PVector[] NG1pos = new PVector[NGONs1];
+ArrayList<ArrayList<Polygon>> PFamily = new ArrayList<ArrayList<Polygon>>();
 class Polygon{
   ArrayList<PVector> vertices;
   PVector center;
@@ -124,6 +131,8 @@ class Edge{
     genCenter = circlei.center;
     genR = circlei.radius;
     circle = circlei;
+    angle1 = 0.0;
+    angle2 = 2.0*PI;
   }
   Edge(){
     p1 = new PVector(0.0,0.0,0.0);
@@ -644,19 +653,34 @@ void ptSetinPolygon(Polygon cpoly, ArrayList<PVector> pts, ArrayList<PVector> ou
   }
 }
 
+int negToPosMod(int num, int mod){
+  if (num < 0){
+    if (num%mod == 0){
+      return num%mod;
+    }
+    else{
+      int mult = abs(num/mod)+1;
+      return num + mult*mod;
+    }
+  }
+  else {
+    return num;
+  }
+}
+
 void writeCircleMapData(HashMap<Integer,ArrayList<Integer>> vertToVertPair,
                         ArrayList<PVector> subdivpts,
                         CircleMap circlemapout, int i, boolean Pole){
-           
-    int ipi = (i - 1) % subdivpts.size();
-    int iipi = (ipi - 2) % subdivpts.size();
-    int pole1 = (ipi - 1) % subdivpts.size();
-    int pole2 = (ipi - 1) % subdivpts.size();
+    
+    int ipi = negToPosMod(i-1,  subdivpts.size()) % subdivpts.size();
+    int iipi = negToPosMod(ipi-2,  subdivpts.size()) % subdivpts.size();
+    int pole1 = negToPosMod(ipi-1,  subdivpts.size()) % subdivpts.size();
+    int pole2 = negToPosMod(ipi-1,  subdivpts.size()) % subdivpts.size();
     boolean pole = true;
     if (!Pole){
-      iipi = (ipi - 1) % subdivpts.size();
+      iipi = negToPosMod(ipi-1,  subdivpts.size()) % subdivpts.size();
       pole1 = (i + 1) % subdivpts.size();
-      pole2 = (i - 4) % subdivpts.size();
+      pole2 = negToPosMod(i-4,  subdivpts.size()) % subdivpts.size();
       pole = false;
     }
         //if (vertToVertPair.containsKey(ipi) && vertToVertPair.containsKey(iipi)){
@@ -699,6 +723,8 @@ void writeCircleMapData(HashMap<Integer,ArrayList<Integer>> vertToVertPair,
     Edge iedg = new Edge(iP1, iP2, ic1.center, ic1.radius, iP1index, iP2index);
     //
     ArrayList<Integer> iipair1 = vertToVertPair.get(iipi);
+    println(vertToVertPair);
+    println(iipi);
     PVector iiP2;
     Integer iiP2index;
     if (iipair1.get(0) == iipi){
@@ -736,11 +762,11 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     //else 
     int ni, pi;
     if (cpoly.vertices.size() >= 5){
-      ni = i+4 % subdivpts.size();
-      pi = i-4 % subdivpts.size();
+      ni = (i+4) % subdivpts.size();
+      pi = negToPosMod(i-4,  subdivpts.size()) % subdivpts.size();
       if (flaggedVerts.contains(ni)){
-        int ipi = (i - 1) % subdivpts.size();
-        int iipi = (ipi - 2) % subdivpts.size();
+        int ipi = negToPosMod(i-1,  subdivpts.size())% subdivpts.size();
+        int iipi = negToPosMod(ipi-2,  subdivpts.size())% subdivpts.size();
         if (vertToVertPair.containsKey(ipi) && vertToVertPair.containsKey(iipi)){
           writeCircleMapData(vertToVertPair, subdivpts, circlemapout, i, true);
         }
@@ -750,17 +776,17 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     else{
       int ini, ipi;
       ini = (i + 1)% subdivpts.size();
-      ipi = (i - 1)% subdivpts.size();
+      ipi = negToPosMod(i-1,  subdivpts.size())% subdivpts.size();
       if (flaggedVerts.contains(ini) || flaggedVerts.contains(ipi)){
-        ni = i+3 % subdivpts.size();
-        pi = i-3 % subdivpts.size();
+        ni = (i+3) % subdivpts.size();
+        pi = negToPosMod(i-3,  subdivpts.size()) % subdivpts.size();
       }
       else{
-        ni = i+4 % subdivpts.size();
-        pi = i-4 % subdivpts.size();
-        if (flaggedVerts.contains((ni-1)% subdivpts.size())){
-          ipi = (i - 1) % subdivpts.size();
-          int iipi = (ipi - 1) % subdivpts.size();
+        ni = (i+4) % subdivpts.size();
+        pi = negToPosMod(i-4,  subdivpts.size())% subdivpts.size();
+        if (flaggedVerts.contains(negToPosMod(ni-1,  subdivpts.size())% subdivpts.size())){
+          ipi = negToPosMod(i-1,  subdivpts.size())% subdivpts.size();
+          int iipi = negToPosMod(ipi-1,  subdivpts.size())% subdivpts.size();
           if (vertToVertPair.containsKey(ipi) && vertToVertPair.containsKey(iipi)){
             writeCircleMapData(vertToVertPair, subdivpts, circlemapout, i, true);
           }
@@ -774,8 +800,8 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     complpair.add(pi);
     complpair.add(i);
     if (complVertPairs.contains(complpair)){
-      int ipi = (i - 1) % subdivpts.size();
-      int iipi = (ipi - 1) % subdivpts.size();
+      int ipi = negToPosMod(i-1,  subdivpts.size())% subdivpts.size();
+      int iipi = negToPosMod(ipi-1,  subdivpts.size())% subdivpts.size();
       if (vertToVertPair.containsKey(ipi) && vertToVertPair.containsKey(iipi)){
         writeCircleMapData(vertToVertPair, subdivpts, circlemapout, i, false);
       }
@@ -1176,12 +1202,17 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
   initializePoleiterationMap(cpoly, poleiteration);
   for (Map.Entry<Edge,ArrayList<Edge>> me : interioredges.entrySet()) {
     Edge pedge = me.getKey();
+    //save edge to parent polygon arc data
+    cpoly.arcs.add(pedge);
     Edge iedge = me.getValue().get(0);
     Edge iedge2 = me.getValue().get(1);
     if (pedge.pole){
       ArrayList<PVector> ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge.circle, ipts);
       ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
+      println("pedge center: ", pedge.circle.center);
+      println("iedge center: ", iedge.circle.center);
+      println("Ipts: ", ipts);
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
       PVector ipt1 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
       ipts = new ArrayList<PVector>();
@@ -1267,8 +1298,11 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
     else{
       ArrayList<PVector> ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge.circle, ipts);
+      println("pedge center: ", pedge.circle.center);
+      println("iedge center: ", iedge.circle.center);
       ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
+      println("Ipts: ", ipts);
       PVector ipt1 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge2.circle, ipts);
@@ -1385,6 +1419,9 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
     buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
                          outPolys);
   }
+  for (Circle centCircle: centroidcircles){
+    cpoly.arcs.add(new Edge(centCircle));
+  }
 }
 
 
@@ -1472,4 +1509,47 @@ void Subdivide(float frac, Polygon cpoly, ArrayList<Polygon> outPolys){
   getSubdivPolyArcData(cpoly, subdivpts, vertsRemap, circlemapout);
   buildInteriorPolygons(cpoly, centcircles, circlemapout, outPolys);
   
+}
+
+void buildSubdivisions(ArrayList<ArrayList<Polygon>> polygonfam, int iter, float frac){
+  int i = 0;
+  while (i < iter){
+    ArrayList<Polygon> polys = polygonfam.get(polygonfam.size()-1);
+    ArrayList<Polygon> newpolys = new ArrayList<Polygon>();
+    for (Polygon poly : polys){
+      Subdivide(frac, poly, newpolys);
+    }
+    polygonfam.add(newpolys);
+  }
+}
+
+void initFirstPoly(PVector[] vertices, ArrayList<ArrayList<Polygon>> pfam){
+  Boolean[] edgethick = new Boolean[vertices.length];
+  Edge[] edges = new Edge[vertices.length];
+  ArrayList<Polygon> polys = new ArrayList<Polygon>();
+  if (vertices.length == 3){
+    edgethick = new Boolean[] {false,false,false};
+  }
+  else if (vertices.length == 4){
+    edgethick = new Boolean[] {false,true,false,true};
+  }
+  else{
+    for(int i = 0; i < vertices.length; i++){
+      edgethick[i] = true;
+    }
+  }
+  for (int i = 0; i < vertices.length; i++){
+    int ni = (i+1)%vertices.length;
+     edges[i] = new Edge(vertices[i], vertices[ni], edgethick[i], i, ni);
+  }
+  buildInteriorPolygon(vertices, edgethick, edges, polys);
+  pfam.add(polys);
+}
+
+void setup(){
+  size(1080,720);
+  getNGonPoints(NGONs1, RNG1, NG1pos);
+  initFirstPoly(NG1pos, PFamily);
+  println(PFamily.get(0).get(0).vertices);
+  buildSubdivisions(PFamily, SubDivLevel, frac);
 }

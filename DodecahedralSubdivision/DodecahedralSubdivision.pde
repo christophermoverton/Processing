@@ -261,15 +261,16 @@ class PointEdgetoPoly{
 
 void CircleCircleIntersection(Circle c1, Circle c2, ArrayList<PVector> ipts){
   PVector c1c2 = PVector.sub(c1.center, c2.center);
+  float c1c2angle = c1c2.heading();
   float dc1c2 = c1c2.mag();
-  float x = (dc1c2*dc1c2 - c1.radius*c1.radius + c2.radius*c2.radius)/2*dc1c2;
-  float y2 = (4*pow(dc1c2,2)*pow(c2.radius,2) -pow(pow(dc1c2,2)-pow(c1.radius,2)+pow(c2.radius,2),2))/4*pow(dc1c2,2);
+  float x = (dc1c2*dc1c2 - c1.radius*c1.radius + c2.radius*c2.radius)/(2*dc1c2);
+  float y2 = (4*pow(dc1c2,2)*pow(c2.radius,2) -pow(pow(dc1c2,2)-pow(c1.radius,2)+pow(c2.radius,2),2))/(4*pow(dc1c2,2));
   //ipoint.x = x;
   //ipoint.y = y;
   float yn = -1*pow(y2,.5);
   float yp = pow(y2,.5);
-  PVector xyn = PVector.add(new PVector(x,yn,0.0),c2.center);
-  PVector xyp = PVector.add(new PVector(x,yp,0.0),c2.center);
+  PVector xyn = PVector.add((new PVector(x,yn,0.0)).rotate(c1c2angle),c2.center);
+  PVector xyp = PVector.add((new PVector(x,yp,0.0)).rotate(c1c2angle),c2.center);
   ipts.add(xyn);
   ipts.add(xyp);
 }
@@ -378,6 +379,10 @@ void PolygonCentroid(ArrayList<PVector> verts, PVector PCenter){
 }
 //given 2 points on a circle find the center of the circle
 void getCircleCenter(PVector p1, PVector p2, PVector Centerout){
+  //no solution for triangulation without specified radius since
+  //substitution of slope of the line given by the chord points
+  //leads to cancellation of a necessary solving term.
+  //
   PVector p1p2 = PVector.sub(p2,p1);
   float dp1p2 = p1p2.mag();
   p1p2.normalize();
@@ -745,6 +750,17 @@ void writeCircleMapData(HashMap<Integer,ArrayList<Integer>> vertToVertPair,
         //}
 }
 
+void getCircleCenter(ArrayList<PVector> subdivpts, int i, int ni, PVector Centerout){
+  if ((ni - i) == 3) {
+    Centerout.x = (subdivpts.get(i).x + subdivpts.get(ni).x)/2.0;
+    Centerout.y = (subdivpts.get(i).y + subdivpts.get(ni).y)/2.0;
+  }
+  else{
+    Centerout.x = subdivpts.get((i+2)%subdivpts.size()).x;
+    Centerout.y = subdivpts.get((i+2)%subdivpts.size()).y;
+  }
+}
+
 void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts, 
                           HashMap<Integer,Integer> vertsRemap,
                           CircleMap circlemapout){
@@ -809,7 +825,8 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     }
     complpair = new ArrayList<Integer>();
     PVector Centerout = new PVector(0.0,0.0,0.0);
-    getCircleCenter(subdivpts.get(i), subdivpts.get(ni), Centerout);
+    //getCircleCenter(subdivpts.get(i), subdivpts.get(ni), Centerout);
+    getCircleCenter(subdivpts, i, ni, Centerout);
     PVector p1c = PVector.sub(Centerout,subdivpts.get(i));
     float radius = p1c.mag();
     complpair.add(i);

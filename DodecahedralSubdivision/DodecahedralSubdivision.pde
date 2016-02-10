@@ -802,7 +802,7 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
         pi = negToPosMod(i-4,  subdivpts.size())% subdivpts.size();
         if (flaggedVerts.contains(negToPosMod(ni-1,  subdivpts.size())% subdivpts.size())){
           ipi = negToPosMod(i-1,  subdivpts.size())% subdivpts.size();
-          int iipi = negToPosMod(ipi-1,  subdivpts.size())% subdivpts.size();
+          int iipi = negToPosMod(ipi-2,  subdivpts.size())% subdivpts.size();
           if (vertToVertPair.containsKey(ipi) && vertToVertPair.containsKey(iipi)){
             writeCircleMapData(vertToVertPair, subdivpts, circlemapout, i, true);
           }
@@ -839,7 +839,12 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
   }
   //write the last circlemapout interiors.
   writeCircleMapData(vertToVertPair, subdivpts, circlemapout, liter, true);
-  
+  if (cpoly.vertices.size() >= 5){
+    writeCircleMapData(vertToVertPair, subdivpts, circlemapout, 5, true);
+  }
+  else{
+    writeCircleMapData(vertToVertPair, subdivpts, circlemapout, 4, false);
+  }
 }
 
 PVector closestPoint(ArrayList<PVector> pts, PVector pos){
@@ -962,6 +967,8 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
     //Edge(PVector P1, PVector P2, boolean Thick, PVector GenCenter,
     //   float GenR, float Angle1, float Angle2, int P1index, int P2index)
     PVector CToP1 = PVector.sub(pt1,parent.genCenter);
+    println("parent gencenter: ", parent.genCenter);
+    println("pt2", pt2);
     PVector CToP2 = PVector.sub(pt2,parent.genCenter);
     float a1 = CToP1.heading();
     float a2 = CToP2.heading();
@@ -1043,7 +1050,7 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
     PointEdgetoPoly pep3 = new PointEdgetoPoly(1, 2, dPt2, parentEdge3);
     PointEdgetoPoly pep4 = new PointEdgetoPoly(3, 0, dPt2, parentEdge2);
     int ni = (pole+1) % 3;
-    int pi = (pole-1) % 3;
+    int pi = negToPosMod(pole-1, 3) % 3;
     int ni2 = 3+ni;
     int pi2 = 3+pi;
     (centPolys.get(ni)).addPointEdgetoPoly(pep1);
@@ -1107,7 +1114,7 @@ void writeDistantPointNonPolePass(Polygon cpoly,int pole, PVector cPt1,
     int npole = (pole+1) % 3;
     int nnpole = (npole+1) % 3;
     PointEdgetoPoly pep1 = new PointEdgetoPoly(npole, nnpole, cPt1, parentEdge1);
-    (centPolys.get(7)).addPointEdgetoPoly(pep1);
+    (centPolys.get(6)).addPointEdgetoPoly(pep1);
   }
 }
 
@@ -1255,9 +1262,9 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       //first polygon is the pole 5 sided polygon
       //get the original edge data...this is inheritance data for parent subdivided
       //edges.
-      int opi = cpoly.subdivPtToPt.get(pedge.pole);
+      int opi = cpoly.subdivPtToPt.get(pedge.pole1);
       int nopi = (opi+1)%cpoly.vertices.size();
-      int popi = (opi-1)%cpoly.vertices.size();
+      int popi = negToPosMod(opi-1, cpoly.vertices.size())%cpoly.vertices.size();
       ArrayList<Integer> polpair = new ArrayList<Integer>();
       getWindingOrder(opi, nopi, cpoly.vertices.size(), polpair);
       PVector[] polpairvec= {cpoly.vertices.get(polpair.get(0)), 
@@ -1358,7 +1365,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       //first polygon is the pole 5 sided polygon
       //get the original edge data...this is inheritance data for parent subdivided
       //edges.
-      int opi = cpoly.subdivPtToPt.get(pedge.pole);
+      println("Pedge pole: ", pedge.pole);
+      int opi = cpoly.subdivPtToPt.get(pedge.pole1);
       //int nopi = (opi+1)%cpoly.vertices.size();
       int popi = cpoly.subdivPtToPt.get(pedge.pole2);
       //ArrayList<Integer> polpair = new ArrayList<Integer>();
@@ -1430,9 +1438,12 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
     }
   }
   //add polygons from centPolys
+  println("Interior edges: ", interioredges.size());
   for(PolyHolding centPoly : centPolys){
     centPoly.writeArrayData();
     Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
+    println("Centpolys vertices array: " , centPoly.verticesArray);
+    println("Centpolys vertices length: ", centPoly.verticesArray.length);
     buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
                          outPolys);
   }

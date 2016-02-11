@@ -216,16 +216,20 @@ class PolyHolding{
   void addPointEdgetoPoly(PointEdgetoPoly pointedgetopoly){
     //when appending a point and edge.  The point on edge is assumed leading on the 
     //clockwise winding.  Filling the polygon thus means edges are never paired with 
-    // a non leading point on the clockwise winding.  
-    addVertex(pointedgetopoly.PolyHPt, pointedgetopoly.PolyHPtIndex);
-    addEdge(pointedgetopoly.PolyHPtIndex, pointedgetopoly.PolyHPtIndex2, 
-            pointedgetopoly.PolyHParentEdge);
+    // a non leading point on the clockwise winding.
+    if (!vertices.contains(pointedgetopoly.PolyHPt)){
+      addVertex(pointedgetopoly.PolyHPt, pointedgetopoly.PolyHPtIndex);
+      addEdge(pointedgetopoly.PolyHPtIndex, pointedgetopoly.PolyHPtIndex2, 
+              pointedgetopoly.PolyHParentEdge);
+    }
   }
   
   void writeArrayData(){
     //This is called after all data has been populated in non array object type members
     verticesArray = new PVector[vertices.size()];
     parentEdgesArray = new Edge[parentEdges.size()];
+    println("PointsToEdge: ", ptsToEdge);
+    println("ParentEdges size: " ,parentEdges.size());
     for (int i = 0; i < vertices.size(); i++){
       int j = vertReIndexing.get(i);
       int nj = (j+1)%vertices.size();
@@ -1045,10 +1049,10 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
   if (cpoly.vertices.size()==3){
     PVector dPt1 = getOppositePt(cPt1, ISPts);
     PointEdgetoPoly pep1 = new PointEdgetoPoly(3, 4, dPt1, parentEdge1);
-    PointEdgetoPoly pep2 = new PointEdgetoPoly(0, 1, dPt1, parentEdge3);
+    PointEdgetoPoly pep2 = new PointEdgetoPoly(1, 2, dPt1, parentEdge3);
     PVector dPt2 = getOppositePt(cPt2, ISPts2);
     PointEdgetoPoly pep3 = new PointEdgetoPoly(1, 2, dPt2, parentEdge3);
-    PointEdgetoPoly pep4 = new PointEdgetoPoly(3, 0, dPt2, parentEdge2);
+    PointEdgetoPoly pep4 = new PointEdgetoPoly(0, 1, dPt2, parentEdge2);
     int ni = (pole+1) % 3;
     int pi = negToPosMod(pole-1, 3) % 3;
     int ni2 = 3+ni;
@@ -1106,16 +1110,69 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
 }
 
 void writeDistantPointNonPolePass(Polygon cpoly,int pole, PVector cPt1,
-                        Edge parentEdge1, ArrayList<PolyHolding> centPolys){
+                        Edge parentEdge1, Edge parentEdge2 , 
+                        ArrayList<PolyHolding> centPolys){
   //an alterate distant point write method to PolyHolding Class on a non pole pass.
   //Special case write method only...only for 3 gon original polygon type.
   //inputting 'forward' pole on a two pole differenced arc.
   if (cpoly.vertices.size() == 3){
     int npole = (pole+1) % 3;
     int nnpole = (npole+1) % 3;
+    int qpole = 3+pole;
+    int q2pole = 3+npole;
     PointEdgetoPoly pep1 = new PointEdgetoPoly(npole, nnpole, cPt1, parentEdge1);
+    PointEdgetoPoly pep2 = new PointEdgetoPoly(2, 3, cPt1, parentEdge1);
+    PointEdgetoPoly pep3 = new PointEdgetoPoly(3, 0, cPt1, parentEdge2);
+    PointEdgetoPoly pep4 = new PointEdgetoPoly(2, 3, cPt1, parentEdge2);
     (centPolys.get(6)).addPointEdgetoPoly(pep1);
+    (centPolys.get(npole)).addPointEdgetoPoly(pep2);
+    (centPolys.get(qpole)).addPointEdgetoPoly(pep4);
+    (centPolys.get(q2pole)).addPointEdgetoPoly(pep3);
   }
+}
+
+void writeClosePoint(Polygon cpoly, int pole,  PVector Pt1, PVector Pt2,
+                        Edge parentEdge1, Edge parentEdge2,  
+                        ArrayList<PolyHolding> centPolys){
+  if (cpoly.vertices.size() == 3){
+    PointEdgetoPoly pep1 = new PointEdgetoPoly(0,1, Pt1, parentEdge1);
+    PointEdgetoPoly pep2 = new PointEdgetoPoly(4,0, Pt2, parentEdge2);
+    (centPolys.get(pole)).addPointEdgetoPoly(pep1);
+    (centPolys.get(pole)).addPointEdgetoPoly(pep2);
+  }
+  else if (cpoly.vertices.size() == 4){
+    int ni;
+
+    if (pole == 0){
+      ni = 1;
+    }
+    else if (pole==1){
+      ni = 0;
+    }
+    else if (pole==2){
+      ni = 0;
+    }
+    else{
+      ni = 1;
+    }
+    if (pole%2 == 0){
+      PointEdgetoPoly pep1 = new PointEdgetoPoly(3,4, Pt1, parentEdge1);
+      PointEdgetoPoly pep2 = new PointEdgetoPoly(2,3, Pt2, parentEdge2);
+      (centPolys.get(ni)).addPointEdgetoPoly(pep1);
+      (centPolys.get(ni)).addPointEdgetoPoly(pep2);
+    }
+    else{
+      PointEdgetoPoly pep1 = new PointEdgetoPoly(2,3, Pt1, parentEdge1);
+      PointEdgetoPoly pep2 = new PointEdgetoPoly(1,2, Pt2, parentEdge2);
+      (centPolys.get(ni)).addPointEdgetoPoly(pep1);
+      (centPolys.get(ni)).addPointEdgetoPoly(pep2);
+    }
+  }
+  else{
+    PointEdgetoPoly pep1 = new PointEdgetoPoly(pole,(pole+1)%cpoly.vertices.size(), Pt1, parentEdge1);
+    (centPolys.get(0)).addPointEdgetoPoly(pep1);
+  }
+
 }
 
 void writeClosePoint(Polygon cpoly, int pole,  PVector Pt1, int poleiter,
@@ -1303,8 +1360,9 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       writeDistantPoints(cpoly, vpole, ipts, ipts2, ipt5, ipt6, iedge, iedge2,
                         new Edge(peccircle), centPolys);
       //write nearest points 
-      writeClosePoint(cpoly, vp1,  ipt1, poleiteration.get(vp1), iedge,  
-                      centPolys);
+      //writeClosePoint(cpoly, vp1,  ipt1, poleiteration.get(vp1), iedge,  
+      //                centPolys);
+      writeClosePoint(cpoly, vp1,  ipt1, ipt2, iedge, pedge, centPolys);
       iteratePoleiterator(vp1, poleiteration);
       //polygon 3
       verts = new PVector[] {ept2,ept4,ipt3,ipt5};
@@ -1408,9 +1466,9 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       //writeDistantPoints(cpoly, vpole, ipts, ipts2, ipt5, ipt6, iedge, iedge2,
       //                  new Edge(peccircle), centPolys);
       //write nearest points 
-      writeClosePoint(cpoly, vp1,  ipt1, poleiteration.get(vp1), iedge,  
-                      centPolys);
-      iteratePoleiterator(vp1, poleiteration);
+      //writeClosePoint(cpoly, vp1,  ipt1, poleiteration.get(vp1), iedge,  
+      //                centPolys);
+      //iteratePoleiterator(vp1, poleiteration);
       //polygon 3 center triangle 
       verts = new PVector[] {ipt9,ipt3,ipt5};
       edgThcks = new Boolean[] {false,false,false};
@@ -1440,6 +1498,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
   //add polygons from centPolys
   println("Interior edges: ", interioredges.size());
   for(PolyHolding centPoly : centPolys){
+    println("cent poly vertices: ", centPoly.vertices);
     centPoly.writeArrayData();
     Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
     println("Centpolys vertices array: " , centPoly.verticesArray);

@@ -1,7 +1,7 @@
 import java.util.Map;
 import java.util.Collections;
 import java.util.Collection;
-int SubDivLevel = 2;
+int SubDivLevel = 1;
 float speed = 1.0; 
 float time = 0.0;
 int NGONs1 = 3; //number of polygon sides
@@ -10,6 +10,7 @@ float atime = 1.0; //(animation time in seconds)
 float frac = .30; //fractional size (recommend that this is < .5)
 PVector[] NG1pos = new PVector[NGONs1];
 ArrayList<ArrayList<Polygon>> PFamily = new ArrayList<ArrayList<Polygon>>();
+ArrayList<PShape> shapes = new ArrayList<PShape>();
 class Polygon{
   ArrayList<PVector> vertices;
   PVector center;
@@ -623,7 +624,7 @@ void setArcincs(Polygon cpoly, float atime){
 }
 
 float xfromLine(PVector p1, PVector p2, float y){
-  return (p2.x-p1.x)*(y-p1.y)/(p2.y-p1.y)+p1.y;
+  return (p2.x-p1.x)*(y-p1.y)/(p2.y-p1.y)+p1.x;
 }
 
 void ptSetinPolygon(Polygon cpoly, ArrayList<PVector> pts, ArrayList<PVector> out){
@@ -1281,6 +1282,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
   initializePolyHoldings(cpoly, centPolys);
   HashMap<Integer,Integer> poleiteration = new HashMap<Integer,Integer>();
   initializePoleiterationMap(cpoly, poleiteration);
+  println("starting polygons creation");
   for (Map.Entry<Edge,ArrayList<Edge>> me : interioredges.entrySet()) {
     Edge pedge = me.getKey();
     //save edge to parent polygon arc data
@@ -1293,8 +1295,11 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
       println("pedge center: ", pedge.circle.center);
       println("iedge center: ", iedge.circle.center);
+      println("pedge radius: ", pedge.circle.radius);
+      println("iedge radius: ", iedge.circle.radius);
       println("Ipts: ", ipts);
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
+      println("Iptsinpoly: " ,iptsinpoly);
       PVector ipt1 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge2.circle, ipts);
@@ -1610,6 +1615,7 @@ void buildSubdivisions(ArrayList<ArrayList<Polygon>> polygonfam, int iter, float
       Subdivide(frac, poly, newpolys);
     }
     polygonfam.add(newpolys);
+    i += 1;
   }
 }
 
@@ -1636,10 +1642,37 @@ void initFirstPoly(PVector[] vertices, ArrayList<ArrayList<Polygon>> pfam){
   pfam.add(polys);
 }
 
+void createNGon(ArrayList<PVector> pos, PShape s){
+  s.beginShape();
+  for (int i = 0; i < pos.size(); i++){
+    s.vertex(pos.get(i).x, pos.get(i).y);
+  }
+  s.stroke(255);
+  s.strokeWeight(.5);
+  s.noFill();
+  s.endShape(CLOSE);
+}
+
 void setup(){
   size(1080,720);
   getNGonPoints(NGONs1, RNG1, NG1pos);
   initFirstPoly(NG1pos, PFamily);
   println(PFamily.get(0).get(0).vertices);
   buildSubdivisions(PFamily, SubDivLevel, frac);
+  
+  for (ArrayList<Polygon> polys : PFamily){
+    for (Polygon poly : polys){
+      PShape s = createShape();
+      createNGon(poly.vertices, s);
+      shapes.add(s);
+    }
+  }
+}
+
+void draw(){
+  background(0);
+  translate(1080.0/2.0, 720.0/2.0);
+  for (PShape sh : shapes){
+   shape(sh,0.0,0.0);
+  }
 }

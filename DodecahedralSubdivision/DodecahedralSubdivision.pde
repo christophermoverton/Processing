@@ -864,15 +864,15 @@ PVector closestPoint(ArrayList<PVector> pts, PVector pos){
   return pts.get(ds.indexOf(min(dsf)));
 }
 
-void getCentCirclesfromPoles(int pole1, int pole2, ArrayList<Circle> centcircles,
+void getCentCirclesfromPoles(Polygon cpoly, int pole1, int pole2, ArrayList<Circle> centcircles,
                              ArrayList<Circle> out){
-  if (centcircles.size() == 3){
+  if (cpoly.vertices.size() == 3){
     out.add(centcircles.get(pole1));
     if (pole1 != pole2){
       out.add(centcircles.get(pole2));
     }
   }
-  else if (centcircles.size()== 4){
+  else if (cpoly.vertices.size()== 4){
     if (pole1 == 0 || pole1 == 3){
       out.add(centcircles.get(0));
     }
@@ -889,7 +889,7 @@ void getCentCirclesfromPoles(int pole1, int pole2, ArrayList<Circle> centcircles
     }
   }
   else{
-    out = centcircles;
+    out.add(centcircles.get(0));
   }
 }
 
@@ -1305,7 +1305,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ArrayList<Circle> pecCircles = new ArrayList<Circle>();
       int vp1 = cpoly.subdivPtToPt.get(pedge.pole1);
       int vp2 = cpoly.subdivPtToPt.get(pedge.pole2);
-      getCentCirclesfromPoles(vp1, vp2, centroidcircles,pecCircles);
+      getCentCirclesfromPoles(cpoly, vp1, vp2, centroidcircles,pecCircles);
       Circle peccircle = pecCircles.get(0);
       CircleCircleIntersection(pedge.circle, peccircle, ipts);
       PVector ipt3 = closestPoint(ipts, cpoly.subdivpts.get(pedge.interiornp1));
@@ -1395,7 +1395,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ArrayList<Circle> pecCircles = new ArrayList<Circle>();
       int vp1 = cpoly.subdivPtToPt.get(pedge.pole1);
       int vp2 = cpoly.subdivPtToPt.get(pedge.pole2);
-      getCentCirclesfromPoles(vp1, vp2, centroidcircles,pecCircles);
+      getCentCirclesfromPoles(cpoly, vp1, vp2, centroidcircles,pecCircles);
       Circle peccircle = pecCircles.get(0);
       CircleCircleIntersection(pedge.circle, peccircle, ipts);
       PVector ipt3 = closestPoint(ipts, cpoly.subdivpts.get(pedge.interiornp2));
@@ -1461,7 +1461,10 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //check to see that centroid circle intersect distant points need to be
       //written for current polygon type. 
-      writeDistantPointNonPolePass(cpoly,vp1, ipt10, new Edge(peccircle), centPolys);
+      int vp3 = (vp2+1)%centroidcircles.size();
+      Circle peccircle3 = centroidcircles.get(vp3);
+      writeDistantPointNonPolePass(cpoly,vp1, ipt10, new Edge(peccircle),
+                                   new Edge(peccircle3), centPolys);
       //int vpole = cpoly.subdivPtToPt.get(pedge.pole1);
       //writeDistantPoints(cpoly, vpole, ipts, ipts2, ipt5, ipt6, iedge, iedge2,
       //                  new Edge(peccircle), centPolys);

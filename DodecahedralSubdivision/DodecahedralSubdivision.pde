@@ -1,13 +1,14 @@
 import java.util.Map;
 import java.util.Collections;
 import java.util.Collection;
+import java.util.Set;
 int SubDivLevel = 1;
 float speed = 1.0; 
 float time = 0.0;
 int NGONs1 = 3; //number of polygon sides
 float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 float atime = 1.0; //(animation time in seconds)
-float frac = .30; //fractional size (recommend that this is < .5)
+float frac = .2; //fractional size (recommend that this is < .5)
 PVector[] NG1pos = new PVector[NGONs1];
 ArrayList<ArrayList<Polygon>> PFamily = new ArrayList<ArrayList<Polygon>>();
 ArrayList<PShape> shapes = new ArrayList<PShape>();
@@ -55,12 +56,34 @@ class Polygon{
   }
   void subdivPtToPtbuild(){
   //assuming that ptToSubdivPt exists
-  subdivPtToPt = new HashMap<Integer,Integer>();
-  for (Map.Entry<Integer,Integer> me : ptToSubdivPt.entrySet()) {
-    int value = me.getKey();
-    int ikey = me.getValue();
-    subdivPtToPt.put(ikey,value);
+    subdivPtToPt = new HashMap<Integer,Integer>();
+    for (Map.Entry<Integer,Integer> me : ptToSubdivPt.entrySet()) {
+      int value = me.getKey();
+      int ikey = me.getValue();
+      subdivPtToPt.put(ikey,value);
+    }
   }
+  
+  Edge getEdgefromSubdivPt(int i){
+    //subdivPtToPt must already be computed
+    //i is a subdivpt indexed point.
+    Set<Integer> k = subdivPtToPt.keySet();
+    int maxval = 99999999;
+    int minval = -1;
+    for (int l : k){
+
+      boolean t3 = i > l;
+      boolean t4 = l > minval;
+      if (t3  && t4){
+        minval = l;
+      }
+    }
+    int vptindex1 = subdivPtToPt.get(minval);
+    int vptindex2 = (vptindex1+1)%vertices.size();
+    ArrayList<Integer> npts = new ArrayList<Integer>();
+    npts.add(vptindex1);
+    return edges.get(vptindex1);
+    
   }
 }
 
@@ -135,6 +158,13 @@ class Edge{
     angle1 = 0.0;
     angle2 = 2.0*PI;
   }
+  Edge(Circle circlei, float Angle1, float Angle2){
+    genCenter = circlei.center;
+    genR = circlei.radius;
+    circle = circlei;
+    angle1 = Angle1;
+    angle2 = Angle2;
+  }
   Edge(){
     p1 = new PVector(0.0,0.0,0.0);
     p2 = new PVector(0.0,0.0,0.0);  // p2 is point 2 on the edge pair
@@ -154,6 +184,24 @@ class Edge{
               //This is a subdivision index mapping.
     pole2 = 0;  //used in special case edge mappings
     pole = false;  //flagged edge that wraps around a pole
+  }
+  void computeAngles(){
+    PVector angleGen1 = PVector.sub(p1,genCenter);
+    PVector angleGen2 = PVector.sub(p2,genCenter);
+    angle1 = angleGen1.heading();
+    angle2 = angleGen2.heading();
+  }
+  void computeRadius(){
+    PVector angleGen1 = PVector.sub(p1,genCenter);
+    genR = angleGen1.mag();
+  }
+  
+  PVector getEdgeHalfAnglePt(){
+    PVector p1pc = PVector.sub(p1, genCenter);
+    float anglediff = angle2 - angle1;
+    anglediff *= .5;
+    p1pc.rotate(anglediff);
+    return PVector.add(p1pc,genCenter);
   }
 }
 
@@ -755,10 +803,19 @@ void writeCircleMapData(HashMap<Integer,ArrayList<Integer>> vertToVertPair,
         //}
 }
 
-void getCircleCenter(ArrayList<PVector> subdivpts, int i, int ni, PVector Centerout){
+void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts, 
+                     int i, int ni, PVector Centerout){
   if ((ni - i) == 3) {
+    Edge pedge = cpoly.getEdgefromSubdivPt(i);
+    if (pedge.linear){
     Centerout.x = (subdivpts.get(i).x + subdivpts.get(ni).x)/2.0;
     Centerout.y = (subdivpts.get(i).y + subdivpts.get(ni).y)/2.0;
+    }
+    else{
+      PVector c = pedge.getEdgeHalfAnglePt();
+      Centerout.x = c.x;
+      Centerout.y = c.y;
+    }
   }
   else{
     Centerout.x = subdivpts.get((i+2)%subdivpts.size()).x;
@@ -831,7 +888,7 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     complpair = new ArrayList<Integer>();
     PVector Centerout = new PVector(0.0,0.0,0.0);
     //getCircleCenter(subdivpts.get(i), subdivpts.get(ni), Centerout);
-    getCircleCenter(subdivpts, i, ni, Centerout);
+    getCircleCenter(cpoly, subdivpts, i, ni, Centerout);
     PVector p1c = PVector.sub(Centerout,subdivpts.get(i));
     float radius = p1c.mag();
     complpair.add(i);
@@ -1283,12 +1340,15 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
   HashMap<Integer,Integer> poleiteration = new HashMap<Integer,Integer>();
   initializePoleiterationMap(cpoly, poleiteration);
   println("starting polygons creation");
+  int k = 0;
   for (Map.Entry<Edge,ArrayList<Edge>> me : interioredges.entrySet()) {
     Edge pedge = me.getKey();
     //save edge to parent polygon arc data
+    pedge.computeAngles();
     cpoly.arcs.add(pedge);
     Edge iedge = me.getValue().get(0);
     Edge iedge2 = me.getValue().get(1);
+    
     if (pedge.pole){
       ArrayList<PVector> ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge.circle, ipts);
@@ -1300,12 +1360,14 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       println("Ipts: ", ipts);
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
       println("Iptsinpoly: " ,iptsinpoly);
-      PVector ipt1 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
+      //PVector ipt1 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
+      PVector ipt1 = closestPoint(iptsinpoly, pedge.p2);
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge2.circle, ipts);
       iptsinpoly = new ArrayList<PVector>();
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
-      PVector ipt2 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
+      //PVector ipt2 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
+      PVector ipt2 = closestPoint(iptsinpoly, pedge.p1);
       ipts = new ArrayList<PVector>();
       ArrayList<Circle> pecCircles = new ArrayList<Circle>();
       int vp1 = cpoly.subdivPtToPt.get(pedge.pole1);
@@ -1672,7 +1734,28 @@ void setup(){
 void draw(){
   background(0);
   translate(1080.0/2.0, 720.0/2.0);
-  for (PShape sh : shapes){
-   shape(sh,0.0,0.0);
+  //for (PShape sh : shapes){
+  // shape(sh,0.0,0.0);
+  //}
+  int i = 0;
+  for (ArrayList<Polygon> polys : PFamily){
+    println("Polygons: ", polys.size());
+    for (Polygon poly: polys){
+      if (i != PFamily.size()-1){
+        println("Polyarcs size: ", poly.arcs.size());
+        for (Edge arci: poly.arcs){
+          stroke(255);
+          strokeWeight(.5);
+          noFill();
+          println("angle1 : ", arci.angle1);
+          println("angle2 : ", arci.angle2);
+          println("radius : ", arci.genR);
+          println("center : ", arci.genCenter);
+          arc(arci.genCenter.x,arci.genCenter.y,arci.genR, arci.genR, arci.angle1, arci.angle2);
+        }
+      }
+    }
+    i += 1;
   }
+  
 }

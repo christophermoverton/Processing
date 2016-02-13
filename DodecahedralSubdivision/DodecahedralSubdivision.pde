@@ -68,7 +68,6 @@ class Polygon{
     //subdivPtToPt must already be computed
     //i is a subdivpt indexed point.
     Set<Integer> k = subdivPtToPt.keySet();
-    int maxval = 99999999;
     int minval = -1;
     for (int l : k){
 
@@ -79,7 +78,6 @@ class Polygon{
       }
     }
     int vptindex1 = subdivPtToPt.get(minval);
-    int vptindex2 = (vptindex1+1)%vertices.size();
     ArrayList<Integer> npts = new ArrayList<Integer>();
     npts.add(vptindex1);
     return edges.get(vptindex1);
@@ -193,7 +191,7 @@ class Edge{
   }
   void computeRadius(){
     PVector angleGen1 = PVector.sub(p1,genCenter);
-    genR = angleGen1.mag();
+    genR = 2.0*angleGen1.mag();
   }
   
   PVector getEdgeHalfAnglePt(){
@@ -277,8 +275,8 @@ class PolyHolding{
     //This is called after all data has been populated in non array object type members
     verticesArray = new PVector[vertices.size()];
     parentEdgesArray = new Edge[parentEdges.size()];
-    println("PointsToEdge: ", ptsToEdge);
-    println("ParentEdges size: " ,parentEdges.size());
+    //println("PointsToEdge: ", ptsToEdge);
+    //println("ParentEdges size: " ,parentEdges.size());
     for (int i = 0; i < vertices.size(); i++){
       int j = vertReIndexing.get(i);
       int nj = (j+1)%vertices.size();
@@ -467,7 +465,7 @@ void getCircleCenter(PVector p1, PVector p2, PVector Centerout){
 // to work subdivision over the entirety of the polygon
 void getNGonSubdivisionPoints(int sdf, PVector[] pos, PVector[] out,
                               boolean wrap){
-  //println("Pos length: ", pos.length);
+  ////println("Pos length: ", pos.length);
   int iterval = pos.length;
   if (!wrap){
     iterval = pos.length-1;
@@ -485,7 +483,7 @@ void getNGonSubdivisionPoints(int sdf, PVector[] pos, PVector[] out,
     p12.normalize();
     mp12 /= float(sdf);
     p12 = PVector.mult(p12, mp12);
-    //println("P12: ", p12);
+    ////println("P12: ", p12);
     PVector newpos = pos1;
     for (int j=0; j < sdf; j++){
       int ind = (sdf)*i + j;
@@ -498,7 +496,7 @@ void getNGonSubdivisionPoints(int sdf, PVector[] pos, PVector[] out,
 
 void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out,
                               HashMap<Integer,Integer> vRemapOut){
-  //println("Pos length: ", pos.length);
+  ////println("Pos length: ", pos.length);
   
   //for (int i=0; i< iterval; i++){
   //  int ni = i+1;
@@ -513,7 +511,7 @@ void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out,
   p12.normalize();
   mp12 /= float(sdf);
   p12 = PVector.mult(p12, mp12);
-  //println("P12: ", p12);
+  ////println("P12: ", p12);
   PVector newpos = pos1;
   vRemapOut.put(cedge.p1index, out.size());
   for (int j=0; j < sdf; j++){
@@ -525,7 +523,7 @@ void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out,
 } //finished getNGonSubdivisionPoints overloaded method
 
 void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out){
-  //println("Pos length: ", pos.length);
+  ////println("Pos length: ", pos.length);
   
   //for (int i=0; i< iterval; i++){
   //  int ni = i+1;
@@ -540,7 +538,7 @@ void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out){
   p12.normalize();
   mp12 /= float(sdf);
   p12 = PVector.mult(p12, mp12);
-  //println("P12: ", p12);
+  ////println("P12: ", p12);
   PVector newpos = pos1;
   //vRemapOut.put(cedge.p1index, out.size());
   for (int j=0; j < sdf; j++){
@@ -756,7 +754,9 @@ void writeCircleMapData(HashMap<Integer,ArrayList<Integer>> vertToVertPair,
     PVector P1 = subdivpts.get(i);
     Integer P1index = i;
     Circle c1 = circlemapout.vertPairToCircle.get(pair1);
-    Edge edg = new Edge(P1, P2, c1.center, c1.radius, P1index, P2index);
+    println("index 1: ",P1index);
+    println("index 2: ",P2index);
+    Edge edg = new Edge(P2, P1, c1.center, c1.radius, P2index, P1index);
     //repeat getting interior edge/arc/circle 1
     edg.interiornp1 = ipi;
     edg.interiornp2 = iipi;
@@ -778,11 +778,12 @@ void writeCircleMapData(HashMap<Integer,ArrayList<Integer>> vertToVertPair,
     PVector iP1 = subdivpts.get(ipi);
     Integer iP1index = ipi;
     Circle ic1 = circlemapout.vertPairToCircle.get(ipair1);
+
     Edge iedg = new Edge(iP1, iP2, ic1.center, ic1.radius, iP1index, iP2index);
     //
     ArrayList<Integer> iipair1 = vertToVertPair.get(iipi);
-    println(vertToVertPair);
-    println(iipi);
+    //println(vertToVertPair);
+    //println(iipi);
     PVector iiP2;
     Integer iiP2index;
     if (iipair1.get(0) == iipi){
@@ -805,7 +806,7 @@ void writeCircleMapData(HashMap<Integer,ArrayList<Integer>> vertToVertPair,
 
 void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts, 
                      int i, int ni, PVector Centerout){
-  if ((ni - i) == 3) {
+  if ((i+3) % subdivpts.size() == ni) {
     Edge pedge = cpoly.getEdgefromSubdivPt(i);
     if (pedge.linear){
     Centerout.x = (subdivpts.get(i).x + subdivpts.get(ni).x)/2.0;
@@ -860,6 +861,7 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
         pi = negToPosMod(i-3,  subdivpts.size()) % subdivpts.size();
       }
       else{
+        //either 2 points on the most interior of subidivided edge
         ni = (i+4) % subdivpts.size();
         pi = negToPosMod(i-4,  subdivpts.size())% subdivpts.size();
         if (flaggedVerts.contains(negToPosMod(ni-1,  subdivpts.size())% subdivpts.size())){
@@ -870,6 +872,7 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
           }
           continue;  
         }
+        //past this point means this is 2nd from pole point 
       }
 
     }
@@ -889,7 +892,7 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     PVector Centerout = new PVector(0.0,0.0,0.0);
     //getCircleCenter(subdivpts.get(i), subdivpts.get(ni), Centerout);
     getCircleCenter(cpoly, subdivpts, i, ni, Centerout);
-    PVector p1c = PVector.sub(Centerout,subdivpts.get(i));
+    PVector p1c = PVector.sub(subdivpts.get(i), Centerout);
     float radius = p1c.mag();
     complpair.add(i);
     complpair.add(ni);
@@ -1029,8 +1032,8 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
     //Edge(PVector P1, PVector P2, boolean Thick, PVector GenCenter,
     //   float GenR, float Angle1, float Angle2, int P1index, int P2index)
     PVector CToP1 = PVector.sub(pt1,parent.genCenter);
-    println("parent gencenter: ", parent.genCenter);
-    println("pt2", pt2);
+    //println("parent gencenter: ", parent.genCenter);
+    //println("pt2", pt2);
     PVector CToP2 = PVector.sub(pt2,parent.genCenter);
     float a1 = CToP1.heading();
     float a2 = CToP2.heading();
@@ -1339,12 +1342,13 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
   initializePolyHoldings(cpoly, centPolys);
   HashMap<Integer,Integer> poleiteration = new HashMap<Integer,Integer>();
   initializePoleiterationMap(cpoly, poleiteration);
-  println("starting polygons creation");
+  //println("starting polygons creation");
   int k = 0;
   for (Map.Entry<Edge,ArrayList<Edge>> me : interioredges.entrySet()) {
     Edge pedge = me.getKey();
     //save edge to parent polygon arc data
     pedge.computeAngles();
+    pedge.computeRadius();
     cpoly.arcs.add(pedge);
     Edge iedge = me.getValue().get(0);
     Edge iedge2 = me.getValue().get(1);
@@ -1353,13 +1357,13 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ArrayList<PVector> ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge.circle, ipts);
       ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
-      println("pedge center: ", pedge.circle.center);
-      println("iedge center: ", iedge.circle.center);
-      println("pedge radius: ", pedge.circle.radius);
-      println("iedge radius: ", iedge.circle.radius);
-      println("Ipts: ", ipts);
+      //println("pedge center: ", pedge.circle.center);
+      //println("iedge center: ", iedge.circle.center);
+      //println("pedge radius: ", pedge.circle.radius);
+      //println("iedge radius: ", iedge.circle.radius);
+      //println("Ipts: ", ipts);
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
-      println("Iptsinpoly: " ,iptsinpoly);
+      //println("Iptsinpoly: " ,iptsinpoly);
       //PVector ipt1 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
       PVector ipt1 = closestPoint(iptsinpoly, pedge.p2);
       ipts = new ArrayList<PVector>();
@@ -1447,11 +1451,11 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
     else{
       ArrayList<PVector> ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge.circle, ipts);
-      println("pedge center: ", pedge.circle.center);
-      println("iedge center: ", iedge.circle.center);
+      //println("pedge center: ", pedge.circle.center);
+      //println("iedge center: ", iedge.circle.center);
       ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
-      println("Ipts: ", ipts);
+      //println("Ipts: ", ipts);
       PVector ipt1 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge2.circle, ipts);
@@ -1490,7 +1494,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       //first polygon is the pole 5 sided polygon
       //get the original edge data...this is inheritance data for parent subdivided
       //edges.
-      println("Pedge pole: ", pedge.pole);
+      //println("Pedge pole: ", pedge.pole);
       int opi = cpoly.subdivPtToPt.get(pedge.pole1);
       //int nopi = (opi+1)%cpoly.vertices.size();
       int popi = cpoly.subdivPtToPt.get(pedge.pole2);
@@ -1566,13 +1570,13 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
     }
   }
   //add polygons from centPolys
-  println("Interior edges: ", interioredges.size());
+  //println("Interior edges: ", interioredges.size());
   for(PolyHolding centPoly : centPolys){
-    println("cent poly vertices: ", centPoly.vertices);
+    //println("cent poly vertices: ", centPoly.vertices);
     centPoly.writeArrayData();
     Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
-    println("Centpolys vertices array: " , centPoly.verticesArray);
-    println("Centpolys vertices length: ", centPoly.verticesArray.length);
+    //println("Centpolys vertices array: " , centPoly.verticesArray);
+    //println("Centpolys vertices length: ", centPoly.verticesArray.length);
     buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
                          outPolys);
   }
@@ -1657,6 +1661,7 @@ void Subdivide(float frac, Polygon cpoly, ArrayList<Polygon> outPolys){
   }
   cpoly.ptToSubdivPt = vertsRemap;
   cpoly.subdivPtToPtbuild();
+  println("ptToSubdivPt: ", cpoly.ptToSubdivPt);
   cpoly.subdivpts = subdivpts;
   cpoly.SubdivPtPairtoThick = SubdivPtPairtoThick; 
   //build arc/circle data for polygon
@@ -1719,7 +1724,7 @@ void setup(){
   size(1080,720);
   getNGonPoints(NGONs1, RNG1, NG1pos);
   initFirstPoly(NG1pos, PFamily);
-  println(PFamily.get(0).get(0).vertices);
+  //println(PFamily.get(0).get(0).vertices);
   buildSubdivisions(PFamily, SubDivLevel, frac);
   
   for (ArrayList<Polygon> polys : PFamily){
@@ -1737,21 +1742,23 @@ void draw(){
   //for (PShape sh : shapes){
   // shape(sh,0.0,0.0);
   //}
+  shape(shapes.get(0),0.0,0.0);
   int i = 0;
   for (ArrayList<Polygon> polys : PFamily){
-    println("Polygons: ", polys.size());
+    //println("Polygons: ", polys.size());
     for (Polygon poly: polys){
       if (i != PFamily.size()-1){
-        println("Polyarcs size: ", poly.arcs.size());
+        //println("Polyarcs size: ", poly.arcs.size());
         for (Edge arci: poly.arcs){
           stroke(255);
           strokeWeight(.5);
           noFill();
-          println("angle1 : ", arci.angle1);
-          println("angle2 : ", arci.angle2);
-          println("radius : ", arci.genR);
-          println("center : ", arci.genCenter);
-          arc(arci.genCenter.x,arci.genCenter.y,arci.genR, arci.genR, arci.angle1, arci.angle2);
+          //println("angle1 : ", arci.angle1);
+          //println("angle2 : ", arci.angle2);
+          //println("radius : ", arci.genR);
+          //println("center : ", arci.genCenter);
+          ellipse(arci.genCenter.x, arci.genCenter.y, arci.genR, arci.genR);
+          //arc(arci.genCenter.x,arci.genCenter.y,arci.genR, arci.genR, arci.angle1, arci.angle2);
         }
       }
     }

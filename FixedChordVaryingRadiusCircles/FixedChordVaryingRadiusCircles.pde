@@ -1,6 +1,6 @@
 //Fixed Chord varies the center of the circle along the bisector line of such chord.
-PVector p1 = new PVector(200.0, 300.0, 0.0);
-PVector p2 = new PVector(-200.0, -200.0, 0.0);
+PVector p1 = new PVector(50.0, 150.0, 0.0);
+PVector p2 = new PVector(-100.0, -200.0, 0.0);
 
 PVector center;
 PVector cp1orth;
@@ -21,7 +21,7 @@ void setup(){
 }
 
 void draw(){
-  fill(0,20);
+  fill(0,40);
   noStroke();
   rect(0,0, 1920,1080);
   translate(1080.0/2.0, 720.0/2.0);
@@ -34,8 +34,12 @@ void draw(){
   PVector nCenterp1 = PVector.sub(nCenter, p1);
   float nr = nCenterp1.mag();
   ellipse(nCenter.x, nCenter.y, 2*nr, 2*nr);
+  line(nCenter.x, nCenter.y, p1.x, p1.y);
+  line(nCenter.x, nCenter.y, p2.x, p2.y);
+  line(nCenter.x, nCenter.y, center.x, center.y);
   orad += dinc;
   if (abs(orad) > maxradius){
     dinc *= -1;
   }
+  //saveFrame();
 }

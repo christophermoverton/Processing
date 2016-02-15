@@ -809,8 +809,16 @@ void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts,
   if ((i+3) % subdivpts.size() == ni) {
     Edge pedge = cpoly.getEdgefromSubdivPt(i);
     if (pedge.linear){
-    Centerout.x = (subdivpts.get(i).x + subdivpts.get(ni).x)/2.0;
-    Centerout.y = (subdivpts.get(i).y + subdivpts.get(ni).y)/2.0;
+      Centerout.x = (subdivpts.get(i).x + subdivpts.get(ni).x)/2.0;
+      Centerout.y = (subdivpts.get(i).y + subdivpts.get(ni).y)/2.0;
+      PVector cp1 = PVector.sub(Centerout,subdivpts.get(i));
+      float radius = cp1.mag();
+      cp1.rotate(PI/2.0);
+      cp1.normalize();
+      PVector nOrth = PVector.mult(cp1, -.4*radius);
+      Centerout.x = PVector.add(nOrth, Centerout).x;
+      Centerout.y = PVector.add(nOrth, Centerout).y;
+      
     }
     else{
       PVector c = pedge.getEdgeHalfAnglePt();
@@ -1740,7 +1748,7 @@ void draw(){
   background(0);
   translate(1080.0/2.0, 720.0/2.0);
   //for (PShape sh : shapes){
-  // shape(sh,0.0,0.0);
+  //shape(sh,0.0,0.0);
   //}
   shape(shapes.get(0),0.0,0.0);
   int i = 0;

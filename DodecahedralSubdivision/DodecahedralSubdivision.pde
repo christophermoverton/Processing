@@ -191,7 +191,7 @@ class Edge{
   }
   void computeRadius(){
     PVector angleGen1 = PVector.sub(p1,genCenter);
-    genR = 2.0*angleGen1.mag();
+    genR = angleGen1.mag();
   }
   
   PVector getEdgeHalfAnglePt(){
@@ -581,6 +581,7 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
         d = distPointToCircle(edge.circle, centCircle);
       }
       float radius = d*(1-frac);
+      radius *= .5;
       out.add(new Circle(centCircle, radius));
     }
   }
@@ -1464,12 +1465,14 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ArrayList<PVector> iptsinpoly = new ArrayList<PVector>();
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
       //println("Ipts: ", ipts);
-      PVector ipt1 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
+      //PVector ipt1 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole1));
+      PVector ipt1 = closestPoint(iptsinpoly, iedge.p2);
       ipts = new ArrayList<PVector>();
       CircleCircleIntersection(pedge.circle, iedge2.circle, ipts);
       iptsinpoly = new ArrayList<PVector>();
       ptSetinPolygon(cpoly, ipts, iptsinpoly);
-      PVector ipt2 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole2));
+      //PVector ipt2 = closestPoint(iptsinpoly, cpoly.subdivpts.get(pedge.pole2));
+      PVector ipt2 = closestPoint(iptsinpoly, iedge2.p2);
       ipts = new ArrayList<PVector>();
       ArrayList<Circle> pecCircles = new ArrayList<Circle>();
       int vp1 = cpoly.subdivPtToPt.get(pedge.pole1);
@@ -1747,9 +1750,9 @@ void setup(){
 void draw(){
   background(0);
   translate(1080.0/2.0, 720.0/2.0);
-  //for (PShape sh : shapes){
-  //shape(sh,0.0,0.0);
-  //}
+  for (PShape sh : shapes){
+  shape(sh,0.0,0.0);
+  }
   shape(shapes.get(0),0.0,0.0);
   int i = 0;
   for (ArrayList<Polygon> polys : PFamily){
@@ -1765,7 +1768,7 @@ void draw(){
           //println("angle2 : ", arci.angle2);
           //println("radius : ", arci.genR);
           //println("center : ", arci.genCenter);
-          ellipse(arci.genCenter.x, arci.genCenter.y, arci.genR, arci.genR);
+          //ellipse(arci.genCenter.x, arci.genCenter.y, 2.0*arci.genR, 2.0*arci.genR);
           //arc(arci.genCenter.x,arci.genCenter.y,arci.genR, arci.genR, arci.angle1, arci.angle2);
         }
       }

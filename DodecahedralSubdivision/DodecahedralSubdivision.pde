@@ -1118,9 +1118,10 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
   //See Dohecahedral Subdivision Rule diagram for modeling help here.
   if (cpoly.vertices.size()==3){
     PVector dPt1 = getOppositePt(cPt1, ISPts);
+    PVector dPt2 = getOppositePt(cPt2, ISPts2);
     PointEdgetoPoly pep1 = new PointEdgetoPoly(3, 4, dPt1, parentEdge1);
     PointEdgetoPoly pep2 = new PointEdgetoPoly(1, 2, dPt1, parentEdge3);
-    PVector dPt2 = getOppositePt(cPt2, ISPts2);
+  
     PointEdgetoPoly pep3 = new PointEdgetoPoly(1, 2, dPt2, parentEdge3);
     PointEdgetoPoly pep4 = new PointEdgetoPoly(0, 1, dPt2, parentEdge2);
     int ni = (pole+1) % 3;
@@ -1546,7 +1547,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       int vp3 = (vp2+1)%centroidcircles.size();
       Circle peccircle3 = centroidcircles.get(vp3);
       writeDistantPointNonPolePass(cpoly,vp1, ipt10, new Edge(peccircle),
-                                   new Edge(peccircle3), centPolys);
+                                   new Edge(peccircle2), centPolys);
       //int vpole = cpoly.subdivPtToPt.get(pedge.pole1);
       //writeDistantPoints(cpoly, vpole, ipts, ipts2, ipt5, ipt6, iedge, iedge2,
       //                  new Edge(peccircle), centPolys);

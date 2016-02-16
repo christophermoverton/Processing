@@ -1126,7 +1126,7 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
     PointEdgetoPoly pep4 = new PointEdgetoPoly(0, 1, dPt2, parentEdge2);
     int ni = (pole+1) % 3;
     int pi = negToPosMod(pole-1, 3) % 3;
-    int ni2 = 3+ni;
+    int ni2 = 3+pole;
     int pi2 = 3+pi;
     (centPolys.get(ni)).addPointEdgetoPoly(pep1);
     (centPolys.get(ni2)).addPointEdgetoPoly(pep2);

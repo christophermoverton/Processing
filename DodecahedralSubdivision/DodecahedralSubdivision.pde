@@ -5,7 +5,7 @@ import java.util.Set;
 int SubDivLevel = 1;
 float speed = 1.0; 
 float time = 0.0;
-int NGONs1 = 3; //number of polygon sides
+int NGONs1 = 4; //number of polygon sides
 float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 float atime = 1.0; //(animation time in seconds)
 float frac = .2; //fractional size (recommend that this is < .5)
@@ -260,14 +260,37 @@ class PolyHolding{
     ptsToEdge.put(ptpair,parentEdges.size()-1);
   }
   
+  boolean testPointEqWithError(PVector p1, PVector p2){
+    float error = .01;
+    PVector p3 = PVector.sub(p1,p2);
+    boolean t1 = abs(p3.x) <= error;
+    boolean t2 = abs(p3.y) <= error;
+    if (t1 && t2){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+  
   void addPointEdgetoPoly(PointEdgetoPoly pointedgetopoly){
     //when appending a point and edge.  The point on edge is assumed leading on the 
     //clockwise winding.  Filling the polygon thus means edges are never paired with 
     // a non leading point on the clockwise winding.
+    
     if (!vertices.contains(pointedgetopoly.PolyHPt)){
-      addVertex(pointedgetopoly.PolyHPt, pointedgetopoly.PolyHPtIndex);
-      addEdge(pointedgetopoly.PolyHPtIndex, pointedgetopoly.PolyHPtIndex2, 
-              pointedgetopoly.PolyHParentEdge);
+      boolean t1 = false;
+      for (PVector vertex: vertices){
+        if (testPointEqWithError(vertex, pointedgetopoly.PolyHPt)){
+          t1 = true;
+          break;
+        }
+      }
+      if (!t1){
+        addVertex(pointedgetopoly.PolyHPt, pointedgetopoly.PolyHPtIndex);
+        addEdge(pointedgetopoly.PolyHPtIndex, pointedgetopoly.PolyHPtIndex2, 
+                pointedgetopoly.PolyHParentEdge);
+      }
     }
   }
   
@@ -861,6 +884,32 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
         continue;  
       }
     }
+    else if (cpoly.vertices.size() == 4){
+      boolean t1 = i == 7 || i == 10 || i == 12 || i == 15;
+      boolean t2 = i == 7 || i == 10 || i == 15;
+      if (t1){
+        if (t2){
+          writeCircleMapData(vertToVertPair, subdivpts, circlemapout, i, true);
+        }
+        else{
+          writeCircleMapData(vertToVertPair, subdivpts, circlemapout, i, false);
+        }
+        continue;
+      }
+      else{
+        boolean t3 = i == 1 || i == 9;
+        boolean t4 = i == 2 || i == 4;
+        if (t3 && !t4){
+          ni = i + 3;
+        }
+        else{
+          ni = (i+4)%subdivpts.size();
+        }
+        if (t4){
+          continue;
+        }
+      }
+    }
     else{
       int ini, ipi;
       ini = (i + 1)% subdivpts.size();
@@ -884,19 +933,20 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
         //past this point means this is 2nd from pole point 
       }
 
-    }
-    //vert pair test to see if Arc already computed on previous pair set for a
-    // given vertex iteration  if true for set inclusion, continue again.
-    complpair.add(pi);
-    complpair.add(i);
-    if (complVertPairs.contains(complpair)){
-      int ipi = negToPosMod(i-1,  subdivpts.size())% subdivpts.size();
-      int iipi = negToPosMod(ipi-1,  subdivpts.size())% subdivpts.size();
-      if (vertToVertPair.containsKey(ipi) && vertToVertPair.containsKey(iipi)){
-        writeCircleMapData(vertToVertPair, subdivpts, circlemapout, i, false);
+      //vert pair test to see if Arc already computed on previous pair set for a
+      // given vertex iteration  if true for set inclusion, continue again.
+      complpair.add(pi);
+      complpair.add(i);
+      if (complVertPairs.contains(complpair)){
+        ipi = negToPosMod(i-1,  subdivpts.size())% subdivpts.size();
+        int iipi = negToPosMod(ipi-1,  subdivpts.size())% subdivpts.size();
+        if (vertToVertPair.containsKey(ipi) && vertToVertPair.containsKey(iipi)){
+          writeCircleMapData(vertToVertPair, subdivpts, circlemapout, i, false);
+        }
+        continue;  //we've already computed an arc for the present iterated vertex index i.
       }
-      continue;  //we've already computed an arc for the present iterated vertex index i.
     }
+
     complpair = new ArrayList<Integer>();
     PVector Centerout = new PVector(0.0,0.0,0.0);
     //getCircleCenter(subdivpts.get(i), subdivpts.get(ni), Centerout);
@@ -1174,7 +1224,7 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
     else{
       ni = 1;
     }
-    int ni2 = 3;
+    int ni2 = 2;
     (centPolys.get(ni)).addPointEdgetoPoly(pep1);
     (centPolys.get(ni2)).addPointEdgetoPoly(pep2);
   }
@@ -1215,16 +1265,16 @@ void writeClosePoint(Polygon cpoly, int pole,  PVector Pt1, PVector Pt2,
     int ni;
 
     if (pole == 0){
-      ni = 1;
+      ni = 0;
     }
     else if (pole==1){
-      ni = 0;
+      ni = 1;
     }
     else if (pole==2){
-      ni = 0;
+      ni = 1;
     }
     else{
-      ni = 1;
+      ni = 0;
     }
     if (pole%2 == 0){
       PointEdgetoPoly pep1 = new PointEdgetoPoly(3,4, Pt1, parentEdge1);
@@ -1444,7 +1494,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       //writeClosePoint(cpoly, vp1,  ipt1, poleiteration.get(vp1), iedge,  
       //                centPolys);
       writeClosePoint(cpoly, vp1,  ipt1, ipt2, iedge, pedge, centPolys);
-      iteratePoleiterator(vp1, poleiteration);
+      //iteratePoleiterator(vp1, poleiteration);
       //polygon 3
       verts = new PVector[] {ept2,ept4,ipt3,ipt5};
       edgThcks = new Boolean[] {false,true,false,true};
@@ -1582,9 +1632,9 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
     }
   }
   //add polygons from centPolys
-  //println("Interior edges: ", interioredges.size());
+  println("Interior edges: ", interioredges.size());
   for(PolyHolding centPoly : centPolys){
-   //println("cent poly vertices: ", centPoly.vertices);
+   println("cent poly vertices: ", centPoly.vertices);
    centPoly.writeArrayData();
    Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
    //println("Centpolys vertices array: " , centPoly.verticesArray);

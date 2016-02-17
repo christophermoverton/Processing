@@ -987,6 +987,9 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     else if (cpoly.vertices.size() == 4){
       getCircleCenter4S(cpoly, subdivpts, i, ni,Centerout);
     }
+    else{
+      getCircleCenter(cpoly, subdivpts, i, ni, Centerout);
+    }
     PVector p1c = PVector.sub(subdivpts.get(i), Centerout);
     float radius = p1c.mag();
     complpair.add(i);

@@ -597,7 +597,7 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
       Edge edge = cpoly.edges.get(edgind);
       float d;
       if (edge.linear){
-        d = distPointToLine(edge.p1,edge.p2,centCircle);
+        d = distPointToLine(centCircle, edge.p1,edge.p2);
       }
       else{
         
@@ -633,7 +633,7 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
           
           d = distPointToCircle(cpoly.edges.get(i).circle, centCircle);
         }
-        float radius = d*(1-frac);
+        float radius = d/2.0;
         out.add(new Circle(centCircle, radius));  
       }
     }
@@ -856,6 +856,37 @@ void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts,
   }
 }
 
+void getCircleCenter4S(Polygon cpoly, ArrayList<PVector> subdivpts, 
+                       int i, int ni, PVector Centerout){
+
+    Edge pedge = cpoly.getEdgefromSubdivPt(i);
+    if (pedge.linear){
+      Centerout.x = (subdivpts.get(i).x + subdivpts.get(ni).x)/2.0;
+      Centerout.y = (subdivpts.get(i).y + subdivpts.get(ni).y)/2.0;
+      PVector cp1 = PVector.sub(Centerout,subdivpts.get(i));
+      float radius = cp1.mag();
+      cp1.rotate(PI/2.0);
+      cp1.normalize();
+      PVector nOrth;
+      if ((ni - i)==3){
+        nOrth = PVector.mult(cp1, 0.0*radius);
+      }
+      else{
+        nOrth = PVector.mult(cp1, -1.6*radius);
+      }
+      Centerout.x = PVector.add(nOrth, Centerout).x;
+      Centerout.y = PVector.add(nOrth, Centerout).y;
+      
+    }
+    else{
+      PVector c = pedge.getEdgeHalfAnglePt();
+      Centerout.x = c.x;
+      Centerout.y = c.y;
+    }
+  
+
+}
+
 void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts, 
                           HashMap<Integer,Integer> vertsRemap,
                           CircleMap circlemapout){
@@ -899,7 +930,7 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
       else{
         boolean t3 = i == 1 || i == 9;
         boolean t4 = i == 2 || i == 4;
-        if (t3 && !t4){
+        if (t3){
           ni = i + 3;
         }
         else{
@@ -950,7 +981,12 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     complpair = new ArrayList<Integer>();
     PVector Centerout = new PVector(0.0,0.0,0.0);
     //getCircleCenter(subdivpts.get(i), subdivpts.get(ni), Centerout);
-    getCircleCenter(cpoly, subdivpts, i, ni, Centerout);
+    if (cpoly.vertices.size()==3){
+      getCircleCenter(cpoly, subdivpts, i, ni, Centerout);
+    }
+    else if (cpoly.vertices.size() == 4){
+      getCircleCenter4S(cpoly, subdivpts, i, ni,Centerout);
+    }
     PVector p1c = PVector.sub(subdivpts.get(i), Centerout);
     float radius = p1c.mag();
     complpair.add(i);
@@ -1725,6 +1761,7 @@ void Subdivide(float frac, Polygon cpoly, ArrayList<Polygon> outPolys){
   cpoly.subdivPtToPtbuild();
   println("ptToSubdivPt: ", cpoly.ptToSubdivPt);
   cpoly.subdivpts = subdivpts;
+  println("Subdivpts: ", cpoly.subdivpts);
   cpoly.SubdivPtPairtoThick = SubdivPtPairtoThick; 
   //build arc/circle data for polygon
   ArrayList<Circle> centcircles = new ArrayList<Circle>();
@@ -1801,9 +1838,9 @@ void setup(){
 void draw(){
   background(0);
   translate(1080.0/2.0, 720.0/2.0);
-  for (PShape sh : shapes){
-  shape(sh,0.0,0.0);
-  }
+  //for (PShape sh : shapes){
+  //shape(sh,0.0,0.0);
+  //}
   shape(shapes.get(0),0.0,0.0);
   int i = 0;
   for (ArrayList<Polygon> polys : PFamily){
@@ -1819,7 +1856,7 @@ void draw(){
           //println("angle2 : ", arci.angle2);
           //println("radius : ", arci.genR);
           //println("center : ", arci.genCenter);
-          //ellipse(arci.genCenter.x, arci.genCenter.y, 2.0*arci.genR, 2.0*arci.genR);
+          ellipse(arci.genCenter.x, arci.genCenter.y, 2.0*arci.genR, 2.0*arci.genR);
           //arc(arci.genCenter.x,arci.genCenter.y,arci.genR, arci.genR, arci.angle1, arci.angle2);
         }
       }

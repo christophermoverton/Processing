@@ -604,7 +604,7 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
         d = distPointToCircle(edge.circle, centCircle);
       }
       float radius = d*(1-frac);
-      radius *= .5;
+      radius *= .8;
       out.add(new Circle(centCircle, radius));
     }
   }
@@ -621,19 +621,19 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
         
         PVector cv = PVector.sub(pts.get(1),cpoly.center);
         float dcv = cv.mag();
-        dcv *= frac;
+        dcv *= 1.4*frac;
         cv.normalize();
         //CentroidCircle position is then given by 
         PVector centCircle = PVector.add(cpoly.center,PVector.mult(cv,dcv));
         float d;
         if (cpoly.edges.get(i).linear){
-          d = distPointToLine(cpoly.edges.get(i).p1,cpoly.edges.get(i).p2,centCircle);
+          d = distPointToLine(centCircle, cpoly.edges.get(i).p1,cpoly.edges.get(i).p2);
         }
         else{
           
           d = distPointToCircle(cpoly.edges.get(i).circle, centCircle);
         }
-        float radius = d/2.0;
+        float radius = d*.6;
         out.add(new Circle(centCircle, radius));  
       }
     }
@@ -641,7 +641,7 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
   else if (cpoly.vertices.size() >= 5){
     float d;
     if (cpoly.edges.get(0).linear){
-      d = distPointToLine(cpoly.edges.get(0).p1,cpoly.edges.get(0).p2,cpoly.center);
+      d = distPointToLine(cpoly.center, cpoly.edges.get(0).p1,cpoly.edges.get(0).p2);
     }
     else{
       
@@ -869,7 +869,7 @@ void getCircleCenter4S(Polygon cpoly, ArrayList<PVector> subdivpts,
       cp1.normalize();
       PVector nOrth;
       if ((ni - i)==3){
-        nOrth = PVector.mult(cp1, 0.0*radius);
+        nOrth = PVector.mult(cp1, .4*radius);
       }
       else{
         nOrth = PVector.mult(cp1, -1.6*radius);
@@ -1030,17 +1030,17 @@ void getCentCirclesfromPoles(Polygon cpoly, int pole1, int pole2, ArrayList<Circ
   }
   else if (cpoly.vertices.size()== 4){
     if (pole1 == 0 || pole1 == 3){
-      out.add(centcircles.get(0));
+      out.add(centcircles.get(1));
     }
     else if (pole1 == 1 || pole1 == 2){
-      out.add(centcircles.get(1));
+      out.add(centcircles.get(0));
     }
     if (pole1 != pole2){
       if (pole2 == 0 || pole2 == 3){
-        out.add(centcircles.get(0));
+        out.add(centcircles.get(1));
       }
       else if (pole2 == 1 || pole2 == 2){
-        out.add(centcircles.get(1));
+        out.add(centcircles.get(0));
       }
     }
   }
@@ -1670,13 +1670,13 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
   //add polygons from centPolys
   println("Interior edges: ", interioredges.size());
   for(PolyHolding centPoly : centPolys){
-   println("cent poly vertices: ", centPoly.vertices);
-   centPoly.writeArrayData();
-   Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
-   //println("Centpolys vertices array: " , centPoly.verticesArray);
-   //println("Centpolys vertices length: ", centPoly.verticesArray.length);
-   buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
-                        outPolys);
+  println("cent poly vertices: ", centPoly.vertices);
+  centPoly.writeArrayData();
+  Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
+  //println("Centpolys vertices array: " , centPoly.verticesArray);
+  //println("Centpolys vertices length: ", centPoly.verticesArray.length);
+  buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
+                       outPolys);
   }
   for (Circle centCircle: centroidcircles){
     cpoly.arcs.add(new Edge(centCircle));
@@ -1838,9 +1838,9 @@ void setup(){
 void draw(){
   background(0);
   translate(1080.0/2.0, 720.0/2.0);
-  //for (PShape sh : shapes){
-  //shape(sh,0.0,0.0);
-  //}
+  for (PShape sh : shapes){
+  shape(sh,0.0,0.0);
+  }
   shape(shapes.get(0),0.0,0.0);
   int i = 0;
   for (ArrayList<Polygon> polys : PFamily){
@@ -1856,7 +1856,7 @@ void draw(){
           //println("angle2 : ", arci.angle2);
           //println("radius : ", arci.genR);
           //println("center : ", arci.genCenter);
-          ellipse(arci.genCenter.x, arci.genCenter.y, 2.0*arci.genR, 2.0*arci.genR);
+          //ellipse(arci.genCenter.x, arci.genCenter.y, 2.0*arci.genR, 2.0*arci.genR);
           //arc(arci.genCenter.x,arci.genCenter.y,arci.genR, arci.genR, arci.angle1, arci.angle2);
         }
       }

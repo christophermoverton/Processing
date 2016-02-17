@@ -5,7 +5,7 @@ import java.util.Set;
 int SubDivLevel = 1;
 float speed = 1.0; 
 float time = 0.0;
-int NGONs1 = 4; //number of polygon sides
+int NGONs1 = 5; //number of polygon sides
 float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 float atime = 1.0; //(animation time in seconds)
 float frac = .2; //fractional size (recommend that this is < .5)
@@ -1240,10 +1240,10 @@ void writeDistantPoints(Polygon cpoly, int pole, ArrayList<PVector> ISPts,
     else{
       pep1 = new PointEdgetoPoly(4, 0, dPt2, parentEdge3);
       if (pole < 2){
-        pep2 = new PointEdgetoPoly(0, 1, dPt1, parentEdge2);
+        pep2 = new PointEdgetoPoly(0, 1, dPt2, parentEdge2);
       }
       else{
-        pep2 = new PointEdgetoPoly(2, 3, dPt1, parentEdge2);
+        pep2 = new PointEdgetoPoly(2, 3, dPt2, parentEdge2);
       }
       //pep2 = new PointEdgetoPoly(0, 1, dPt2, parentEdge2);
     }
@@ -1670,13 +1670,13 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
   //add polygons from centPolys
   println("Interior edges: ", interioredges.size());
   for(PolyHolding centPoly : centPolys){
-  println("cent poly vertices: ", centPoly.vertices);
-  centPoly.writeArrayData();
-  Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
-  //println("Centpolys vertices array: " , centPoly.verticesArray);
-  //println("Centpolys vertices length: ", centPoly.verticesArray.length);
-  buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
-                       outPolys);
+    println("cent poly vertices: ", centPoly.vertices);
+    centPoly.writeArrayData();
+    Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
+    //println("Centpolys vertices array: " , centPoly.verticesArray);
+    //println("Centpolys vertices length: ", centPoly.verticesArray.length);
+    buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
+                        outPolys);
   }
   for (Circle centCircle: centroidcircles){
     cpoly.arcs.add(new Edge(centCircle));

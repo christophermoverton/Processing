@@ -186,8 +186,19 @@ class Edge{
   void computeAngles(){
     PVector angleGen1 = PVector.sub(p1,genCenter);
     PVector angleGen2 = PVector.sub(p2,genCenter);
+    
     angle1 = angleGen1.heading();
+    if (angle1 < 0.0){
+      angle1 += 2.0*PI;
+    }
     angle2 = angleGen2.heading();
+    if (angle2 < 0.0){
+      angle2 += 2.0*PI;
+    }
+    boolean t1 = angle1 > angle2;
+    if (t1){
+      angle2 = 2.0*PI;
+    }
   }
   void computeRadius(){
     PVector angleGen1 = PVector.sub(p1,genCenter);
@@ -647,7 +658,7 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
       
       d = distPointToCircle(cpoly.edges.get(0).circle, cpoly.center);
     }
-    float radius = d*(1-frac);
+    float radius = d*(1-frac)*.8;
     out.add(new Circle(cpoly.center, radius)); 
   }
 }
@@ -848,6 +859,16 @@ void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts,
       PVector c = pedge.getEdgeHalfAnglePt();
       Centerout.x = c.x;
       Centerout.y = c.y;
+      //PVector nC = new PVector(0.0,0.0,0.0);
+      Centerout.x = (subdivpts.get(i).x + subdivpts.get(ni).x)/2.0;
+      Centerout.y = (subdivpts.get(i).y + subdivpts.get(ni).y)/2.0;
+      PVector cp1 = PVector.sub(Centerout,subdivpts.get(i));
+      float radius = cp1.mag();
+      //cp1.rotate(PI/2.0);
+      cp1.normalize();
+      PVector nOrth = PVector.mult(cp1, -.4*radius);
+      Centerout.x = PVector.add(nOrth, Centerout).x;
+      Centerout.y = PVector.add(nOrth, Centerout).y;
     }
   }
   else{
@@ -882,6 +903,16 @@ void getCircleCenter4S(Polygon cpoly, ArrayList<PVector> subdivpts,
       PVector c = pedge.getEdgeHalfAnglePt();
       Centerout.x = c.x;
       Centerout.y = c.y;
+      //PVector nC = new PVector(0.0,0.0,0.0);
+      Centerout.x = (subdivpts.get(i).x + subdivpts.get(ni).x)/2.0;
+      Centerout.y = (subdivpts.get(i).y + subdivpts.get(ni).y)/2.0;
+      PVector cp1 = PVector.sub(Centerout,subdivpts.get(i));
+      float radius = cp1.mag();
+      cp1.rotate(PI/2.0);
+      cp1.normalize();
+      PVector nOrth = PVector.mult(cp1, -.4*radius);
+      Centerout.x = PVector.add(nOrth, Centerout).x;
+      Centerout.y = PVector.add(nOrth, Centerout).y;
     }
   
 
@@ -1841,9 +1872,9 @@ void setup(){
 void draw(){
   background(0);
   translate(1080.0/2.0, 720.0/2.0);
-  for (PShape sh : shapes){
-  shape(sh,0.0,0.0);
-  }
+  //for (PShape sh : shapes){
+  //shape(sh,0.0,0.0);
+  //}
   shape(shapes.get(0),0.0,0.0);
   int i = 0;
   for (ArrayList<Polygon> polys : PFamily){
@@ -1855,12 +1886,14 @@ void draw(){
           stroke(255);
           strokeWeight(.5);
           noFill();
-          //println("angle1 : ", arci.angle1);
-          //println("angle2 : ", arci.angle2);
+          println("angle1 : ", arci.angle1);
+          println("angle2 : ", arci.angle2);
           //println("radius : ", arci.genR);
           //println("center : ", arci.genCenter);
           //ellipse(arci.genCenter.x, arci.genCenter.y, 2.0*arci.genR, 2.0*arci.genR);
-          //arc(arci.genCenter.x,arci.genCenter.y,arci.genR, arci.genR, arci.angle1, arci.angle2);
+          float mina = min(arci.angle1,arci.angle2);
+          float maxa = max(arci.angle1,arci.angle2);
+          arc(arci.genCenter.x,arci.genCenter.y,2.0*arci.genR, 2.0*arci.genR, mina, maxa);
         }
       }
     }

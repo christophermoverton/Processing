@@ -195,9 +195,9 @@ class Edge{
     if (angle2 < 0.0){
       angle2 += 2.0*PI;
     }
-    boolean t1 = angle1 > angle2;
+    boolean t1 = angle2 > angle1;
     if (t1){
-      angle2 = 2.0*PI;
+      angle1 += 2.0*PI;
     }
   }
   void computeRadius(){
@@ -220,6 +220,10 @@ class Circle{
   Circle(PVector Center, float Radius){
     center = Center;
     radius = Radius;
+  }
+  Circle(){
+    center = new PVector(0.0,0.0);
+    radius = 0.0;
   }
 }
 
@@ -840,7 +844,8 @@ void writeCircleMapData(HashMap<Integer,ArrayList<Integer>> vertToVertPair,
 }
 
 void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts, 
-                     int i, int ni, PVector Centerout){
+                     int i, int ni, Circle ccircle, PVector Centerout){
+  //ccircle is the centroid circle for comparison
   if ((i+3) % subdivpts.size() == ni) {
     Edge pedge = cpoly.getEdgefromSubdivPt(i);
     if (pedge.linear){
@@ -874,6 +879,19 @@ void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts,
   else{
     Centerout.x = subdivpts.get((i+2)%subdivpts.size()).x;
     Centerout.y = subdivpts.get((i+2)%subdivpts.size()).y;
+    Centerout.x = (subdivpts.get(i).x + subdivpts.get(ni).x)/2.0;
+    Centerout.y = (subdivpts.get(i).y + subdivpts.get(ni).y)/2.0;    
+    float d1 = distPointToCircle(ccircle, Centerout);
+    float d2 = (PVector.sub(subdivpts.get(i), Centerout)).mag();
+    float d1d2 = d1-d2;
+    d1d2 += d1d2*.2;
+    PVector cp1 = PVector.sub(Centerout,subdivpts.get(i));
+    float radius = cp1.mag();
+    cp1.normalize();
+    cp1.rotate(PI/2.0);
+    PVector nOrth = PVector.mult(cp1, d1d2);
+    Centerout.x = PVector.add(nOrth, Centerout).x;
+    Centerout.y = PVector.add(nOrth, Centerout).y;
   }
 }
 
@@ -919,7 +937,7 @@ void getCircleCenter4S(Polygon cpoly, ArrayList<PVector> subdivpts,
 }
 
 void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts, 
-                          HashMap<Integer,Integer> vertsRemap,
+                          HashMap<Integer,Integer> vertsRemap, ArrayList<Circle> centcircles,
                           CircleMap circlemapout){
   Collection<Integer> flaggedVerts = vertsRemap.values();
   ArrayList<ArrayList<Integer>> complVertPairs = new ArrayList<ArrayList<Integer>>();
@@ -1013,13 +1031,27 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
     PVector Centerout = new PVector(0.0,0.0,0.0);
     //getCircleCenter(subdivpts.get(i), subdivpts.get(ni), Centerout);
     if (cpoly.vertices.size()==3){
-      getCircleCenter(cpoly, subdivpts, i, ni, Centerout);
+      //boolean t1 = i == 1 || i == 3 || i == 6 || i == 8 || i == 11 || i == 13;
+      boolean t2 = i == 1 || i == 13;
+      boolean t3 = i == 3 || i == 6;
+      boolean t4 = i == 8 || i == 11;
+      Circle cc = new Circle();
+      if (t2){
+        cc = centcircles.get(0);
+      }
+      if (t3){
+        cc = centcircles.get(1);
+      }
+      if (t4){
+        cc = centcircles.get(2);
+      }
+      getCircleCenter(cpoly, subdivpts, i, ni, cc, Centerout);
     }
     else if (cpoly.vertices.size() == 4){
       getCircleCenter4S(cpoly, subdivpts, i, ni,Centerout);
     }
     else{
-      getCircleCenter(cpoly, subdivpts, i, ni, Centerout);
+      getCircleCenter(cpoly, subdivpts, i, ni, centcircles.get(0),Centerout);
     }
     PVector p1c = PVector.sub(subdivpts.get(i), Centerout);
     float radius = p1c.mag();
@@ -1545,16 +1577,17 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ArrayList<PVector> vertsal = new ArrayList<PVector>();
       Collections.addAll(vertsal,verts);
       Boolean[] edgThcks = {true,true,true,true,true}; 
-      
+      println("polpairvecal: ", polpairvecal);
+      println("pointsToEdge:", cpoly.pointsToEdge);
       Edge[] ParentEdges = {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal)),iedge,new Edge(peccircle),iedge2,
                             cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal2))};
-      
+      //a new check routine needs
       buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //polygon 2
       verts = new PVector[] {ipt5,ipt1,ipt2,ipt6};
       edgThcks = new Boolean[] {false,true,false,true};
       ParentEdges = new Edge[] {iedge,pedge,iedge2, new Edge(peccircle)};
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //check to see that centroid circle intersect distant points need to be
       //written for current polygon type. 
       int vpole = cpoly.subdivPtToPt.get(pedge.pole1);
@@ -1566,7 +1599,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       writeClosePoint(cpoly, vp1,  ipt1, ipt2, iedge, pedge, centPolys);
       //iteratePoleiterator(vp1, poleiteration);
       //polygon 3
-      verts = new PVector[] {ept2,ept4,ipt3,ipt5};
+      verts = new PVector[] {ept2,ept5,ipt3,ipt5};
       edgThcks = new Boolean[] {false,true,false,true};
       ParentEdges = new Edge[] {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal)),
                                 pedge, new Edge(peccircle), iedge};
@@ -1576,7 +1609,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       edgThcks = new Boolean[] {false,false,false};
       ParentEdges = new Edge[] {new Edge(peccircle),
                                 pedge,iedge};
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
     }
     else{
       ArrayList<PVector> ipts = new ArrayList<PVector>();
@@ -1656,12 +1689,12 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       Edge[] ParentEdges = {iedge,new Edge(peccircle),new Edge(peccircle2),iedge2,
                             cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal2))};
       
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //polygon 2
       verts = new PVector[] {ipt7,ipt1,ipt5,ipt9};
       edgThcks = new Boolean[] {false,true,false,true};
       ParentEdges = new Edge[] {iedge,pedge,new Edge(peccircle2), new Edge(peccircle)};
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //check to see that centroid circle intersect distant points need to be
       //written for current polygon type. 
       int vp3 = (vp2+1)%centroidcircles.size();
@@ -1680,25 +1713,25 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       edgThcks = new Boolean[] {false,false,false};
       ParentEdges = new Edge[] { new Edge(peccircle2),
                                 pedge, new Edge(peccircle)};
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //polygon 4
       verts = new PVector[] {ipt9,ipt3,ipt2,ipt8};
       edgThcks = new Boolean[] {false,true,false,true};
       ParentEdges = new Edge[] {new Edge(peccircle),
                                 pedge, iedge2, new Edge(peccircle2)};
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //polygon 5
       verts = new PVector[] {ept2,ept5,ipt4,ipt7};
       edgThcks = new Boolean[] {false,true,false,true};
       ParentEdges = new Edge[] {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal2)),
                                 pedge, new Edge(peccircle), iedge};
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //polygon 6
       verts = new PVector[] {ipt7,ipt4,ipt1};
       edgThcks = new Boolean[] {false,false,false};
       ParentEdges = new Edge[] {new Edge(peccircle),
                                 pedge,iedge};
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
     }
   }
   //add polygons from centPolys
@@ -1709,8 +1742,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
     Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
     //println("Centpolys vertices array: " , centPoly.verticesArray);
     //println("Centpolys vertices length: ", centPoly.verticesArray.length);
-    buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
-                        outPolys);
+    //buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
+    //                    outPolys);
   }
   for (Circle centCircle: centroidcircles){
     cpoly.arcs.add(new Edge(centCircle));
@@ -1801,7 +1834,7 @@ void Subdivide(float frac, Polygon cpoly, ArrayList<Polygon> outPolys){
   ArrayList<Circle> centcircles = new ArrayList<Circle>();
   getCentroidCircles(frac, cpoly, centcircles);
   CircleMap circlemapout = new CircleMap();
-  getSubdivPolyArcData(cpoly, subdivpts, vertsRemap, circlemapout);
+  getSubdivPolyArcData(cpoly, subdivpts, vertsRemap, centcircles, circlemapout);
   buildInteriorPolygons(cpoly, centcircles, circlemapout, outPolys);
   
 }
@@ -1872,9 +1905,9 @@ void setup(){
 void draw(){
   background(0);
   translate(1080.0/2.0, 720.0/2.0);
-  //for (PShape sh : shapes){
-  //shape(sh,0.0,0.0);
-  //}
+  for (PShape sh : shapes){
+  shape(sh,0.0,0.0);
+  }
   shape(shapes.get(0),0.0,0.0);
   int i = 0;
   for (ArrayList<Polygon> polys : PFamily){
@@ -1886,8 +1919,8 @@ void draw(){
           stroke(255);
           strokeWeight(.5);
           noFill();
-          println("angle1 : ", arci.angle1);
-          println("angle2 : ", arci.angle2);
+          //println("angle1 : ", arci.angle1);
+          //println("angle2 : ", arci.angle2);
           //println("radius : ", arci.genR);
           //println("center : ", arci.genCenter);
           //ellipse(arci.genCenter.x, arci.genCenter.y, 2.0*arci.genR, 2.0*arci.genR);

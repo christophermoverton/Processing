@@ -2,7 +2,7 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.Collection;
 import java.util.Set;
-int SubDivLevel = 1;
+int SubDivLevel = 2;
 float speed = 1.0; 
 float time = 0.0;
 int NGONs1 = 5; //number of polygon sides
@@ -120,7 +120,7 @@ class Edge{
     //only if the edge is linear
     p1 = P1;
     p2 = P2;
-    linear = true;
+    linear = false;
     thick = Thick;
     genCenter = GenCenter;
     genR = GenR;
@@ -150,6 +150,7 @@ class Edge{
     circle = new Circle(GenCenter,GenR);
   }
   Edge(Circle circlei){
+    linear = false;
     genCenter = circlei.center;
     genR = circlei.radius;
     circle = circlei;
@@ -157,6 +158,7 @@ class Edge{
     angle2 = 2.0*PI;
   }
   Edge(Circle circlei, float Angle1, float Angle2){
+    linear = false;
     genCenter = circlei.center;
     genR = circlei.radius;
     circle = circlei;
@@ -348,6 +350,35 @@ class PointEdgetoPoly{
   }
 }
 
+float computeDet2Dmat(float[][] iMat){
+  return iMat[0][0]*iMat[1][1] - (iMat[1][0]*iMat[0][1]);
+}
+
+float computeDet3Dmat(float[][] iMat){
+  float[][] cofMat1 = {{iMat[1][1], iMat[1][2]},{iMat[2][1],iMat[2][2]}};
+  float[][] cofMat2 = {{iMat[1][0], iMat[1][2]},{iMat[2][0],iMat[2][2]}};
+  float[][] cofMat3 = {{iMat[1][0], iMat[1][1]},{iMat[2][0],iMat[2][1]}};
+  float det1 = computeDet2Dmat(cofMat1);
+  float det2 = computeDet2Dmat(cofMat2);
+  float det3 = computeDet2Dmat(cofMat3);
+  return det1 -1.0*det2 + det3;
+}
+
+void CircumCircleCenter(PVector p1, PVector p2, PVector p3, PVector out){
+  float[][] mata = {{p1.x,p1.y, 1.0},{p2.x,p2.y,1.0},{p3.x,p3.y,1.0}};
+  float[][] matbx = {{pow(p1.x,2.0)+pow(p1.y,2.0), p1.y,1.0},
+                     {pow(p2.x,2.0)+pow(p2.y,2.0), p2.y,1.0},
+                     {pow(p3.x,2.0)+pow(p3.y,2.0), p3.y,1.0}};
+  float[][] matby = {{pow(p1.x,2.0)+pow(p1.y,2.0), p1.x,1.0},
+                     {pow(p2.x,2.0)+pow(p2.y,2.0), p2.x,1.0},
+                     {pow(p3.x,2.0)+pow(p3.y,2.0), p3.x,1.0}};
+  float a = computeDet3Dmat(mata);
+  float bx = -1.0*computeDet3Dmat(matbx);
+  float by = -1.0*computeDet3Dmat(matby);
+  out.x = -1.0*(bx)/(2*a);
+  out.y = -1.0*(by)/(2*a);
+}
+
 void CircleCircleIntersection(Circle c1, Circle c2, ArrayList<PVector> ipts){
   PVector c1c2 = PVector.sub(c1.center, c2.center);
   float c1c2angle = c1c2.heading();
@@ -437,11 +468,15 @@ float distPointToCircle(Circle ccircle, PVector p, PVector out){
 
 float distPointToCircle(Circle ccircle, PVector p){
   PVector pc = PVector.sub(p,ccircle.center);
+  float si = 1.0;
+  if (pc.mag() < ccircle.radius){
+    si *= -1.0;
+  }
   pc.normalize();
   pc = PVector.mult(pc,ccircle.radius);
   PVector k = PVector.add(ccircle.center,pc);
   PVector kp = PVector.sub(k,p);
-  return kp.mag();
+  return si*kp.mag();
 }
 
 void PolygonCentroid(ArrayList<PVector> verts, PVector PCenter){
@@ -884,12 +919,12 @@ void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts,
     float d1 = distPointToCircle(ccircle, Centerout);
     float d2 = (PVector.sub(subdivpts.get(i), Centerout)).mag();
     float d1d2 = d1-d2;
-    d1d2 += d1d2*.2;
+    d1d2 += d1d2*.1;
     PVector cp1 = PVector.sub(Centerout,subdivpts.get(i));
     float radius = cp1.mag();
     cp1.normalize();
-    cp1.rotate(PI/2.0);
-    PVector nOrth = PVector.mult(cp1, d1d2);
+    cp1.rotate(-1.0*PI/2.0);
+    PVector nOrth = PVector.mult(cp1, ccircle.radius*.2);
     Centerout.x = PVector.add(nOrth, Centerout).x;
     Centerout.y = PVector.add(nOrth, Centerout).y;
   }
@@ -1793,6 +1828,7 @@ void Subdivide(float frac, Polygon cpoly, ArrayList<Polygon> outPolys){
     if (i == cedges.size()-1){
       lastEdge = true;
     }
+    print("Linear edge: ", cedge.linear);
     if (cedge.linear){
       if (cedge.thick){
 

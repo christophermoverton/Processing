@@ -5,7 +5,7 @@ import java.util.Set;
 int SubDivLevel = 2;
 float speed = 1.0; 
 float time = 0.0;
-int NGONs1 = 4; //number of polygon sides
+int NGONs1 = 5; //number of polygon sides
 float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 float atime = 1.0; //(animation time in seconds)
 float frac = .2; //fractional size (recommend that this is < .5)
@@ -565,7 +565,7 @@ void getNGonSubdivisionPoints(int sdf, PVector[] pos, PVector[] out,
     p12.normalize();
     mp12 /= float(sdf);
     p12 = PVector.mult(p12, mp12);
-    ////println("P12: ", p12);
+    //println("P12: ", p12);
     PVector newpos = pos1;
     for (int j=0; j < sdf; j++){
       int ind = (sdf)*i + j;
@@ -578,7 +578,7 @@ void getNGonSubdivisionPoints(int sdf, PVector[] pos, PVector[] out,
 
 void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out,
                               HashMap<Integer,Integer> vRemapOut){
-  ////println("Pos length: ", pos.length);
+  //println("Pos length: ", pos.length);
   
   //for (int i=0; i< iterval; i++){
   //  int ni = i+1;
@@ -593,7 +593,7 @@ void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out,
   p12.normalize();
   mp12 /= float(sdf);
   p12 = PVector.mult(p12, mp12);
-  ////println("P12: ", p12);
+  //println("P12: ", p12);
   PVector newpos = pos1;
   vRemapOut.put(cedge.p1index, out.size());
   for (int j=0; j < sdf; j++){
@@ -605,7 +605,7 @@ void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out,
 } //finished getNGonSubdivisionPoints overloaded method
 
 void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out){
-  ////println("Pos length: ", pos.length);
+  //println("Pos length: ", pos.length);
   
   //for (int i=0; i< iterval; i++){
   //  int ni = i+1;
@@ -620,7 +620,7 @@ void getNGonSubdivisionPoints(int sdf, Edge cedge, ArrayList<PVector> out){
   p12.normalize();
   mp12 /= float(sdf);
   p12 = PVector.mult(p12, mp12);
-  ////println("P12: ", p12);
+  //println("P12: ", p12);
   PVector newpos = pos1;
   //vRemapOut.put(cedge.p1index, out.size());
   for (int j=0; j < sdf; j++){
@@ -899,9 +899,17 @@ void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts,
       float radius = cp1.mag();
       cp1.rotate(PI/2.0);
       cp1.normalize();
-      PVector nOrth = PVector.mult(cp1, -.4*radius);
-      Centerout.x = PVector.add(nOrth, Centerout).x;
-      Centerout.y = PVector.add(nOrth, Centerout).y;
+      PVector pC = PointToCircle(ccircle, Centerout);
+      PVector nOrth = PVector.mult(cp1, ccircle.radius*.5);
+      PVector cout = new PVector(0.0,0.0,0.0);
+      Centerout.x = PVector.add(nOrth, pC).x;
+      Centerout.y = PVector.add(nOrth, pC).y;
+      CircumCircleCenter(subdivpts.get(i), Centerout, subdivpts.get(ni),cout);
+      Centerout.x = cout.x;
+      Centerout.y = cout.y;
+      //PVector nOrth = PVector.mult(cp1, -.4*radius);
+      //Centerout.x = PVector.add(nOrth, Centerout).x;
+      //Centerout.y = PVector.add(nOrth, Centerout).y;
       
     }
     else{
@@ -1249,6 +1257,7 @@ void buildEdgefromParent(PVector pt1, PVector pt2, Integer np1index,
     float a2 = CToP2.heading();
     Edge out = new Edge(pt1, pt2, edgeThick, parent.genCenter, 
                    parent.genR, a1, a2, np1index, np2index);
+    out.computeAngles();
     outs.add(out);
   }
 }
@@ -1626,8 +1635,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       ArrayList<PVector> vertsal = new ArrayList<PVector>();
       Collections.addAll(vertsal,verts);
       Boolean[] edgThcks = {true,true,true,true,true}; 
-      println("polpairvecal: ", polpairvecal);
-      println("pointsToEdge:", cpoly.pointsToEdge);
+      //println("polpairvecal: ", polpairvecal);
+      //println("pointsToEdge:", cpoly.pointsToEdge);
       Edge[] ParentEdges = {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal)),iedge,new Edge(peccircle),iedge2,
                             cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal2))};
       //a new check routine needs
@@ -1784,9 +1793,9 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
     }
   }
   //add polygons from centPolys
-  println("Interior edges: ", interioredges.size());
+  //println("Interior edges: ", interioredges.size());
   for(PolyHolding centPoly : centPolys){
-    println("cent poly vertices: ", centPoly.vertices);
+    //println("cent poly vertices: ", centPoly.vertices);
     centPoly.writeArrayData();
     Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
     //println("Centpolys vertices array: " , centPoly.verticesArray);
@@ -1950,6 +1959,14 @@ void setup(){
       shapes.add(s);
     }
   }
+  //Polygon p = (PFamily.get(1)).get(4);
+  //for (Edge e : p.edges){
+  //  println("angle1: ",e.angle1);
+  //  println("angle2: ",e.angle2);
+  //  println("pt1: ", e.p1);
+  //  println("pt2: ", e.p2);
+  //}
+  //println(p.vertices);
 }
 
 void draw(){

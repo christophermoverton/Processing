@@ -5,7 +5,7 @@ import java.util.Set;
 int SubDivLevel = 2;
 float speed = 1.0; 
 float time = 0.0;
-int NGONs1 = 5; //number of polygon sides
+int NGONs1 = 4; //number of polygon sides
 float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 float atime = 1.0; //(animation time in seconds)
 float frac = .2; //fractional size (recommend that this is < .5)
@@ -361,7 +361,7 @@ float computeDet3Dmat(float[][] iMat){
   float det1 = computeDet2Dmat(cofMat1);
   float det2 = computeDet2Dmat(cofMat2);
   float det3 = computeDet2Dmat(cofMat3);
-  return det1 -1.0*det2 + det3;
+  return iMat[0][0]*det1 -1.0*iMat[0][1]*det2 + iMat[0][2]*det3;
 }
 
 void CircumCircleCenter(PVector p1, PVector p2, PVector p3, PVector out){
@@ -374,9 +374,9 @@ void CircumCircleCenter(PVector p1, PVector p2, PVector p3, PVector out){
                      {pow(p3.x,2.0)+pow(p3.y,2.0), p3.x,1.0}};
   float a = computeDet3Dmat(mata);
   float bx = -1.0*computeDet3Dmat(matbx);
-  float by = -1.0*computeDet3Dmat(matby);
-  out.x = -1.0*(bx)/(2*a);
-  out.y = -1.0*(by)/(2*a);
+  float by = 1.0*computeDet3Dmat(matby);
+  out.x = -1.0*(bx)/(2.0*a);
+  out.y = -1.0*(by)/(2.0*a);
 }
 
 void CircleCircleIntersection(Circle c1, Circle c2, ArrayList<PVector> ipts){
@@ -477,6 +477,15 @@ float distPointToCircle(Circle ccircle, PVector p){
   PVector k = PVector.add(ccircle.center,pc);
   PVector kp = PVector.sub(k,p);
   return si*kp.mag();
+}
+
+PVector PointToCircle(Circle ccircle, PVector p){
+  PVector pc = PVector.sub(p,ccircle.center);
+  float si = 1.0;
+
+  pc.normalize();
+  pc = PVector.mult(pc,ccircle.radius);
+  return PVector.add(ccircle.center,pc);
 }
 
 void PolygonCentroid(ArrayList<PVector> verts, PVector PCenter){
@@ -923,10 +932,15 @@ void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts,
     PVector cp1 = PVector.sub(Centerout,subdivpts.get(i));
     float radius = cp1.mag();
     cp1.normalize();
-    cp1.rotate(-1.0*PI/2.0);
-    PVector nOrth = PVector.mult(cp1, ccircle.radius*.2);
-    Centerout.x = PVector.add(nOrth, Centerout).x;
-    Centerout.y = PVector.add(nOrth, Centerout).y;
+    cp1.rotate(PI/2.0);
+    PVector pC = PointToCircle(ccircle, Centerout);
+    PVector nOrth = PVector.mult(cp1, ccircle.radius*.5);
+    PVector cout = new PVector(0.0,0.0,0.0);
+    Centerout.x = PVector.add(nOrth, pC).x;
+    Centerout.y = PVector.add(nOrth, pC).y;
+    CircumCircleCenter(subdivpts.get(i), Centerout, subdivpts.get(ni),cout);
+    Centerout.x = cout.x;
+    Centerout.y = cout.y;
   }
 }
 

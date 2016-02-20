@@ -5,7 +5,7 @@ import java.util.Set;
 int SubDivLevel = 2;
 float speed = 1.0; 
 float time = 0.0;
-int NGONs1 = 5; //number of polygon sides
+int NGONs1 = 3; //number of polygon sides
 float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 float atime = 1.0; //(animation time in seconds)
 float frac = .2; //fractional size (recommend that this is < .5)
@@ -698,15 +698,25 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
     }
   }
   else if (cpoly.vertices.size() >= 5){
-    float d;
-    if (cpoly.edges.get(0).linear){
-      d = distPointToLine(cpoly.center, cpoly.edges.get(0).p1,cpoly.edges.get(0).p2);
+    float mind = 9999999999999.0;
+    float d=0.0;
+    for (Edge edg : cpoly.edges){
+      if (edg.linear){
+        d = distPointToLine(cpoly.center, edg.p1,edg.p2);
+        if (d < mind){
+          mind = d;
+        }
+      }
+      else{
+        
+        d = abs(distPointToCircle(edg.circle, cpoly.center));
+        if (d < mind){
+          mind = d;
+        }
+      }
+
     }
-    else{
-      
-      d = distPointToCircle(cpoly.edges.get(0).circle, cpoly.center);
-    }
-    float radius = d*(1-frac)*.8;
+    float radius = mind*(1-frac)*.8;
     out.add(new Circle(cpoly.center, radius)); 
   }
 }
@@ -921,11 +931,19 @@ void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts,
       Centerout.y = (subdivpts.get(i).y + subdivpts.get(ni).y)/2.0;
       PVector cp1 = PVector.sub(Centerout,subdivpts.get(i));
       float radius = cp1.mag();
-      //cp1.rotate(PI/2.0);
+      cp1.rotate(PI/2.0);
       cp1.normalize();
-      PVector nOrth = PVector.mult(cp1, -.4*radius);
-      Centerout.x = PVector.add(nOrth, Centerout).x;
-      Centerout.y = PVector.add(nOrth, Centerout).y;
+      PVector pC = PointToCircle(ccircle, Centerout);
+      PVector nOrth = PVector.mult(cp1, ccircle.radius*.5);
+      PVector cout = new PVector(0.0,0.0,0.0);
+      Centerout.x = PVector.add(nOrth, pC).x;
+      Centerout.y = PVector.add(nOrth, pC).y;
+      CircumCircleCenter(subdivpts.get(i), Centerout, subdivpts.get(ni),cout);
+      Centerout.x = cout.x;
+      Centerout.y = cout.y;
+      //PVector nOrth = PVector.mult(cp1, -.4*radius);
+      //Centerout.x = PVector.add(nOrth, Centerout).x;
+      //Centerout.y = PVector.add(nOrth, Centerout).y;
     }
   }
   else{
@@ -1105,7 +1123,16 @@ void getSubdivPolyArcData(Polygon cpoly, ArrayList<PVector> subdivpts,
       getCircleCenter(cpoly, subdivpts, i, ni, cc, Centerout);
     }
     else if (cpoly.vertices.size() == 4){
-      getCircleCenter4S(cpoly, subdivpts, i, ni,Centerout);
+      boolean t2 = i == 1 || i == 11 ||i == 14;
+      boolean t3 = i == 3 || i == 6 || i == 9;
+      Circle cc = new Circle();
+      if (t2){
+        cc = centcircles.get(1);
+      }
+      if (t3){
+        cc = centcircles.get(0);
+      }
+      getCircleCenter(cpoly, subdivpts, i, ni,cc,Centerout);
     }
     else{
       getCircleCenter(cpoly, subdivpts, i, ni, centcircles.get(0),Centerout);
@@ -1747,7 +1774,7 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       Edge[] ParentEdges = {iedge,new Edge(peccircle),new Edge(peccircle2),iedge2,
                             cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal2))};
       
-      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //polygon 2
       verts = new PVector[] {ipt7,ipt1,ipt5,ipt9};
       edgThcks = new Boolean[] {false,true,false,true};

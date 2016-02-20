@@ -9,6 +9,8 @@ int NGONs1 = 5; //number of polygon sides
 float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 float atime = 1.0; //(animation time in seconds)
 float frac = .2; //fractional size (recommend that this is < .5)
+float irad = .6;
+float irad2 = .78;
 PVector[] NG1pos = new PVector[NGONs1];
 ArrayList<ArrayList<Polygon>> PFamily = new ArrayList<ArrayList<Polygon>>();
 ArrayList<PShape> shapes = new ArrayList<PShape>();
@@ -748,7 +750,7 @@ void getCentroidCircles(float frac, Polygon cpoly, ArrayList<Circle> out){
       }
 
     }
-    float radius = mind*(1-frac)*.8;
+    float radius = mind*(1-frac)*irad2;
     out.add(new Circle(cpoly.center, radius)); 
   }
 }
@@ -987,13 +989,13 @@ void getCircleCenter(Polygon cpoly, ArrayList<PVector> subdivpts,
     float d1 = distPointToCircle(ccircle, Centerout);
     float d2 = (PVector.sub(subdivpts.get(i), Centerout)).mag();
     float d1d2 = d1-d2;
-    d1d2 += d1d2*.1;
+    d1d2 += d1d2*.4;
     PVector cp1 = PVector.sub(Centerout,subdivpts.get(i));
     float radius = cp1.mag();
     cp1.normalize();
     cp1.rotate(PI/2.0);
     PVector pC = PointToCircle(ccircle, Centerout);
-    PVector nOrth = PVector.mult(cp1, ccircle.radius*.5);
+    PVector nOrth = PVector.mult(cp1, ccircle.radius*irad);
     PVector cout = new PVector(0.0,0.0,0.0);
     Centerout.x = PVector.add(nOrth, pC).x;
     Centerout.y = PVector.add(nOrth, pC).y;
@@ -1723,13 +1725,13 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
       edgThcks = new Boolean[] {false,true,false,true};
       ParentEdges = new Edge[] {cpoly.edges.get(cpoly.pointsToEdge.get(polpairvecal)),
                                 pedge, new Edge(peccircle), iedge};
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
       //polygon 4
       verts = new PVector[] {ipt5,ipt3,ipt1};
       edgThcks = new Boolean[] {false,false,false};
       ParentEdges = new Edge[] {new Edge(peccircle),
                                 pedge,iedge};
-      buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
+      //buildInteriorPolygon(verts, edgThcks, ParentEdges, outPolys);
     }
     else{
       ArrayList<PVector> ipts = new ArrayList<PVector>();
@@ -2053,7 +2055,7 @@ void draw(){
           //println("angle2 : ", arci.angle2);
           //println("radius : ", arci.genR);
           //println("center : ", arci.genCenter);
-          //ellipse(arci.genCenter.x, arci.genCenter.y, 2.0*arci.genR, 2.0*arci.genR);
+          ellipse(arci.genCenter.x, arci.genCenter.y, 2.0*arci.genR, 2.0*arci.genR);
           float mina = min(arci.rangle1,arci.rangle2);
           float maxa = max(arci.rangle1,arci.rangle2);
           arc(arci.genCenter.x,arci.genCenter.y,2.0*arci.genR, 2.0*arci.genR, mina, maxa);

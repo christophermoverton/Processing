@@ -18,15 +18,16 @@ PVector pM;
 PVector lpO2; 
 PVector lpM2;
 float angle = .2;
-float ainc = .008;
-float rinc = -.5;
+float ainc = .009;
+float rinc = .001;
 PVector prevP;
 PVector prevP2;
 PVector prevP3;
 boolean start = true;
 int count = 0;
-//ArrayList<ArrayList<PVector>> pointset = new ArrayList<ArrayList<PVector>>();
-ArrayList<PVector> pointset = new ArrayList<PVector>();
+ArrayList<ArrayList<PVector>> pointset = new ArrayList<ArrayList<PVector>>();
+ArrayList<PVector> pts = new ArrayList<PVector>();
+//ArrayList<PVector> pointset = new ArrayList<PVector>();
 
 void setup(){
   size(1080,720);
@@ -43,14 +44,16 @@ void draw(){
   pM = new PVector(0.0, CircleR, 0.0);
   lpO2 = PVector.add(pO, refVec);
   lpM2 = PVector.add(pM, refVec);
-  int nc = int(angle/(2.0*PI));
+  int nc = int(angle/(PI));
   if (nc != count){
     //pointset = new ArrayList<ArrayList<PVector>>();
-    pointset = new ArrayList<PVector>();
+    pointset.add(pts);
+    pts = new ArrayList<PVector>();
     count = nc;
-    rinc *= -1.0;
+    //rinc *= -1.0;
   }
   translate(1080.0/2.0, 720.0/2.0);
+  scale(1.0+1.0/(CircleR*.01));
   stroke(255);
   noFill();
   ellipse(0.0,0.0, CircleR*2.0, CircleR*2.0);
@@ -88,8 +91,15 @@ void draw(){
   // curve(pts.get(0).x, pts.get(0).y, pts.get(1).x, pts.get(1).y,
   //       pts.get(2).x, pts.get(2).y, pts.get(3).x, pts.get(3).y);
   //}
+  for (ArrayList<PVector> opts : pointset){
+    beginShape();
+    for (PVector pt : opts){
+      curveVertex(pt.x, pt.y);
+    }
+    endShape();
+  }
   beginShape();
-  for (PVector pt : pointset){
+  for(PVector pt : pts){
     curveVertex(pt.x, pt.y);
   }
   endShape();
@@ -103,14 +113,15 @@ void draw(){
   //pts.add(pts1);
   //pts.add(pts2);
   //pointset.add(pts);
-  pointset.add(pts2);
+  pts.add(pts2);
   prevP3.x = prevP2.x;
   prevP3.y = prevP2.y;
   prevP2.x = prevP.x;
   prevP2.y = prevP.y;
   prevP.x = pP.x;
   prevP.y = pP.y;
-  
   angle += ainc;
-  CircleR += rinc;
+  CircleR += -1.0*CircleR*rinc;//(cos(2.0*angle))*CircleR*rinc;
+  
+  
 }

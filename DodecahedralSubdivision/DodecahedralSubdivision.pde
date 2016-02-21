@@ -5,12 +5,12 @@ import java.util.Set;
 int SubDivLevel = 2;
 float speed = 1.0; 
 float time = 0.0;
-int NGONs1 = 5; //number of polygon sides
+int NGONs1 = 6; //number of polygon sides
 float RNG1 = 300;  //maximum radius of a polygon vertex from polygon center for the initializing polygon
 float atime = 1.0; //(animation time in seconds)
 float frac = .2; //fractional size (recommend that this is < .5)
-float irad = .6;
-float irad2 = .78;
+float irad = .64;
+float irad2 = .8;
 PVector[] NG1pos = new PVector[NGONs1];
 ArrayList<ArrayList<Polygon>> PFamily = new ArrayList<ArrayList<Polygon>>();
 ArrayList<PShape> shapes = new ArrayList<PShape>();
@@ -1864,8 +1864,8 @@ void buildInteriorPolygons(Polygon cpoly, ArrayList<Circle> centroidcircles,
     Boolean[] thickArray = getThickPolybool(centPoly.verticesArray);
     //println("Centpolys vertices array: " , centPoly.verticesArray);
     //println("Centpolys vertices length: ", centPoly.verticesArray.length);
-    buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
-                        outPolys);
+    //buildInteriorPolygon(centPoly.verticesArray, thickArray, centPoly.parentEdgesArray,
+    //                    outPolys);
   }
   for (Circle centCircle: centroidcircles){
     cpoly.arcs.add(new Edge(centCircle));
@@ -2064,5 +2064,6 @@ void draw(){
     }
     i += 1;
   }
+  
   
 }

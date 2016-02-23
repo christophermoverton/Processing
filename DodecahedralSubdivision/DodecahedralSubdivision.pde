@@ -843,8 +843,11 @@ int negToPosMod(int num, int mod){
       return num%mod;
     }
     else{
-      int mult = abs(num/mod)+1;
-      return num + mult*mod;
+      //int mult = abs(num/mod)+1;
+      int r = num%mod;
+      r += mod;
+      //return num + mult*mod;
+      return r;
     }
   }
   else {

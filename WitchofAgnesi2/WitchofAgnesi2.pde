@@ -59,7 +59,15 @@ void draw(){
   ellipse(0.0,0.0, CircleR*2.0, CircleR*2.0);
   float OrigA = 2*angle;
   PVector pA = new PVector(pO.x, pO.y, 0.0);
-  strokeWeight(10.0);
+  float sw = 10;
+  //println(CircleR);
+  if (CircleR < 1){
+    sw = CircleR*.1;
+  }
+  else{
+    sw -= 9.0*((300 - CircleR)/300);
+  }
+  strokeWeight(sw);
   
   pA.rotate(OrigA);
   point(pA.x, pA.y);
@@ -80,7 +88,12 @@ void draw(){
     start = false;
   }
   stroke(255);
-  strokeWeight(1.0);
+  if (CircleR < 1){
+    strokeWeight(sw);
+  }
+  else{
+    strokeWeight(sw*.3);
+  }
   line(pP.x, pP.y, pA.x, pA.y);
   line(pP.x, pP.y, pN.x, pN.y);
   line(pA.x, pA.y, pN.x, pN.y);
@@ -122,6 +135,6 @@ void draw(){
   prevP.y = pP.y;
   angle += ainc;
   CircleR += -1.0*CircleR*rinc;//(cos(2.0*angle))*CircleR*rinc;
-  
+  //saveFrame();
   
 }

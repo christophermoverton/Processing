@@ -6,7 +6,10 @@ Compute circle packings according to the Koebe-Thurston-Andreev theory,
 Following a numerical algorithm by C. R. Collins and K. Stephenson,
 "A Circle Packing Algorithm", Comp. Geom. Theory and Appl. 2003.
 */
+float Eradius = 60.0;
 float tolerance  = 1.0+1.0e-12;
+Integer iterationMax = 3000;
+ArrayList<ArrayList<Integer>> ComplexFamily = new ArrayList<ArrayList<Integer>>();
 
 class Circle{
   PVector center;
@@ -42,10 +45,10 @@ float flower(HashMap<Integer, Float> radius, Integer center, ArrayList<Integer> 
       if (j == -1){
         j = cycle.size()-1;
       }
-      println(j);
-      println(i);
-      println(center);
-      println(radius);
+      //println(j);
+      //println(i);
+      //println(center);
+      //println(radius);
       sum += acxyz(radius.get(center), radius.get(cycle.get(j)), radius.get(cycle.get(i)));
     }
     return sum;
@@ -91,6 +94,7 @@ void place(HashMap<Integer,PVector> placements,HashMap<Integer,Float> radii,
             //println(offset);
             //println(theta);
             PVector tvec = PVector.mult(centTos, radii.get(t)+radii.get(center));
+            tvec = PVector.add(tvec, placements.get(center));
             //tvec.x = placements.get(center).x + offset.x*(radii.get(t)+radii.get(center));
             //tvec.y = placements.get(center).y + offset.y*(radii.get(t)+radii.get(center));
             placements.put(t,tvec);
@@ -119,10 +123,14 @@ void circlePack(HashMap<Integer,ArrayList<Integer>> internal,
     radii.put(k.getKey(), 1.0);
   }
   float lastChange = 2.0;
+  Integer iterat = 0;
   while (lastChange > tolerance){
     lastChange = 1;
+    if (iterat > iterationMax){
+      break;
+    }
     for (Map.Entry<Integer,ArrayList<Integer>> k : internal.entrySet()){
-      println(k.getValue());
+      //println(k.getValue());
       float theta = flower(radii, k.getKey(), k.getValue());
       float hat = radii.get(k.getKey())/(1/sin(theta/(2*(k.getValue()).size()))-1);
       float newrad = hat * (1/(sin(PI/(k.getValue()).size())) - 1);
@@ -130,8 +138,9 @@ void circlePack(HashMap<Integer,ArrayList<Integer>> internal,
       lastChange = max(lastChange,kc);
       radii.put(k.getKey(),newrad);
     }
+    iterat += 1;
   }
-  
+  println("finished iteration");
   HashMap<Integer,PVector> placements = new HashMap<Integer,PVector>();
   Iterator it = internal.entrySet().iterator();
   Map.Entry<Integer,ArrayList<Integer>> k1 = (Map.Entry)it.next();
@@ -147,6 +156,166 @@ void circlePack(HashMap<Integer,ArrayList<Integer>> internal,
 
 HashMap<Integer,Circle> out = new HashMap<Integer,Circle>();
 
+ArrayList<ArrayList<Integer>> subdivide(ArrayList<ArrayList<Integer>> complexfamily,
+               HashMap<Integer, ArrayList<Integer>> internal,
+               HashMap<Integer, Float> external, Integer[] maxlabel){
+  // 5 point subdivision rule...we track labels only not points or positions.
+  ArrayList<ArrayList<Integer>> nout = new ArrayList<ArrayList<Integer>>();
+  HashMap<Integer[], Integer> subdivEdges = new HashMap<Integer[],Integer>();
+  HashMap<ArrayList<Integer>, Integer> subdivEdges2 = new HashMap<ArrayList<Integer>, Integer>();
+  for (ArrayList<Integer> complex : complexfamily){
+    //create new 5 complex
+    ArrayList<Integer> inner5 = new ArrayList<Integer>();
+    Integer[] isubdivlabels = {0,0,0,0,0};
+    maxlabel[0] += 1;
+    isubdivlabels[0] = maxlabel[0];
+    maxlabel[0] += 1;
+    isubdivlabels[1] = maxlabel[0];
+    maxlabel[0] += 1;
+    isubdivlabels[2] = maxlabel[0];
+    maxlabel[0] += 1;
+    isubdivlabels[3] = maxlabel[0];
+    maxlabel[0] += 1;
+    isubdivlabels[4] = maxlabel[0];
+    maxlabel[0] += 1;
+    Integer[] subdivlabels = {0,0,0,0,0};
+    Boolean[] internallabel = {false,false,false,false,false};
+    //get subdivlabel pts set to subdivlabel array
+    //rewrite the original internal cycle.  Done once only...
+    for (int i = 0; i < complex.size(); i++){
+      Integer nlabel = complex.get((i+1)%complex.size());
+      Integer ilabel = complex.get(i);
+      Integer[] lpair = {nlabel,ilabel};
+      Integer[] lpair2 = {ilabel, nlabel};
+      ArrayList<Integer> lpair2al = new ArrayList<Integer>();
+      Collections.addAll(lpair2al, lpair2);
+      ArrayList<Integer> lpairal = new ArrayList<Integer>();
+      Collections.addAll(lpairal, lpair);
+      if (subdivEdges2.containsKey(lpairal)){
+        subdivlabels[i] = subdivEdges2.get(lpairal);
+
+      }
+      else if (subdivEdges2.containsKey(lpair2al)){
+        subdivlabels[i] = subdivEdges2.get(lpair2al);
+      }
+      else{
+        maxlabel[0] += 1;
+        subdivlabels[i] = maxlabel[0];
+        subdivEdges.put(lpair2, maxlabel[0]);
+        subdivEdges2.put(lpair2al, maxlabel[0]);
+      }
+      if (internal.containsKey(nlabel)){
+        ArrayList<Integer> cycle = internal.get(nlabel);
+        Integer ilcind = cycle.indexOf(ilabel);
+        if (ilcind != -1){
+          cycle.set(ilcind, subdivlabels[i]);
+        }
+      }
+      if (internal.containsKey(ilabel)){
+        ArrayList<Integer> cycle = internal.get(ilabel);
+        Integer nlcind = cycle.indexOf(nlabel);
+        if (nlcind != -1){
+          cycle.set(nlcind, subdivlabels[i]);
+        }
+      }
+
+      if (internal.containsKey(subdivlabels[i])){
+        internal.get(subdivlabels[i]).add(isubdivlabels[i]);
+      }
+      else{
+        if (internal.containsKey(ilabel)&&internal.containsKey(nlabel)){
+          //set internal
+          ArrayList<Integer> cycle = new ArrayList<Integer>();
+          cycle.add(nlabel);
+          cycle.add(isubdivlabels[i]);
+          cycle.add(ilabel);
+          internal.put(subdivlabels[i],cycle);
+        }
+        else{
+          external.put(subdivlabels[i], Eradius);
+        }
+      }
+      
+    }
+    //pass to write internal points
+    for (int i = 0; i < isubdivlabels.length; i++){
+      ArrayList<Integer> iComplex = new ArrayList<Integer>();
+      Integer label1 = isubdivlabels[(i+1)%isubdivlabels.length];
+      int pi = i - 1;
+      if (i == 0){
+        pi = isubdivlabels.length-1;
+      }
+      Integer label2 = isubdivlabels[pi];
+      Integer label3 = subdivlabels[i];
+      ArrayList<Integer> cycle = new ArrayList<Integer>();
+      Collections.addAll(cycle, new Integer[] {label1,label2,label3});
+      internal.put(isubdivlabels[i], cycle);
+      label1 = isubdivlabels[i];
+      label2 = subdivlabels[i];
+      label3 = complex.get(i);
+      Integer label4 = subdivlabels[(i+1)%subdivlabels.length];
+      Integer label5 = isubdivlabels[(i+1)%isubdivlabels.length];
+      ArrayList<Integer> ncomplex = new ArrayList<Integer>();
+      Collections.addAll(ncomplex, new Integer[] {label1,label2,label3,label4,label5});
+      inner5.add(isubdivlabels[i]);
+      nout.add(ncomplex);
+    }
+    nout.add(inner5);
+    //Integer label6 = maxlabel[0];
+    //maxlabel[0] += 1;
+    //Integer label7 = maxlabel[0];
+    //maxlabel[0] += 1;
+    //Integer label8 = maxlabel[0];
+    //maxlabel[0] += 1;
+    //Integer label9 = maxlabel[0];
+    //maxlabel[0] += 1;
+    //Integer label10 = maxlabel[0];
+    
+  }
+  return nout;
+}
+
+void triangulateComplex(ArrayList<ArrayList<Integer>> complexfamily,
+                        HashMap<Integer, ArrayList<Integer>> internal, 
+                        Integer[] maxlabel){
+    Integer tlabelSize = complexfamily.size()+1;
+    ArrayList<Integer> newLabels = new ArrayList<Integer>();
+    for (int i = 0; i < complexfamily.size(); i++){
+      maxlabel[0] += 1;
+      newLabels.add(maxlabel[0]);
+      ArrayList<Integer> cycle = new ArrayList<Integer>(complexfamily.get(i));
+      internal.put(maxlabel[0], cycle);
+      for (int j = 0; j < cycle.size(); j++){
+        Integer v = cycle.get(j);
+        if (internal.containsKey(v)){
+          Integer ni1 = j-1;
+          if (j == 0){
+             ni1 = cycle.size()-1;
+          }
+          Integer ni2 = (j+1)%cycle.size();
+          Integer nlabel1 = cycle.get(ni1);
+          Integer nlabel2 = cycle.get(ni2);
+          ArrayList<Integer> vpetal = internal.get(v);
+          println(nlabel1);
+          println(nlabel2);
+          println(v);
+          println(vpetal);
+          Integer vpind1 = vpetal.indexOf(nlabel1);
+          Integer vpind2 = vpetal.indexOf(nlabel2);
+          boolean t1 = vpind1 == 0 || vpind1 == (vpetal.size()-1);
+          boolean t2 = vpind2 == 0 || vpind2 == (vpetal.size()-1);
+          if (t1 && t2){
+            vpetal.add(maxlabel[0]);
+          }
+          else{
+            Integer insIndex = max(vpind1,vpind2);
+            vpetal.add(insIndex, maxlabel[0]);
+          }
+        }
+      }
+    }
+}
+
 void setup(){
   size(1080,720);
   HashMap<Integer, ArrayList<Integer>> internal = new HashMap<Integer, ArrayList<Integer>>();
@@ -154,14 +323,23 @@ void setup(){
   Integer[] ivgarr = {1,2,3,4,5};
   Collections.addAll(ivgraph,ivgarr);
   println(ivgraph);
-  internal.put(6, ivgraph);
+  //internal.put(6, ivgraph);
   HashMap<Integer, Float> external = new HashMap<Integer,Float>();
-  external.put(1,1.0);
-  external.put(2,1.0);
-  external.put(3,1.0);
-  external.put(4,1.0);
-  external.put(5,1.0);
-  
+  external.put(1,Eradius);
+  external.put(2,Eradius);
+  external.put(3,Eradius);
+  external.put(4,Eradius);
+  external.put(5,Eradius);
+  ArrayList<ArrayList<Integer>> complexfamily = new ArrayList<ArrayList<Integer>>();
+  complexfamily.add(ivgraph);
+  Integer[] maxlabel = {5};
+  complexfamily = subdivide(complexfamily, internal, external, maxlabel);
+  complexfamily = subdivide(complexfamily, internal, external, maxlabel);
+  println(internal);
+  println(external);
+  println(complexfamily);
+  triangulateComplex(complexfamily,internal, maxlabel);
+  println(internal);
   circlePack(internal, external, out);
 }
 
@@ -172,6 +350,6 @@ void draw(){
     Circle circv = circ.getValue();
     noFill();
     stroke(255);
-    ellipse(200.0*circv.center.x, 200.0*circv.center.y, 2*200.0*circv.radius, 2*200.0*circv.radius);
+    ellipse(circv.center.x, circv.center.y, 2*circv.radius, 2*circv.radius);
   }
 }

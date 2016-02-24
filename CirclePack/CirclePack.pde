@@ -6,6 +6,7 @@ Compute circle packings according to the Koebe-Thurston-Andreev theory,
 Following a numerical algorithm by C. R. Collins and K. Stephenson,
 "A Circle Packing Algorithm", Comp. Geom. Theory and Appl. 2003.
 */
+Integer pass = 1;
 float Eradius = 30.0;
 float tolerance  = 1.0+1.0e-12;
 Integer iterationMax = 8000;
@@ -181,8 +182,13 @@ ArrayList<ArrayList<Integer>> subdivide(ArrayList<ArrayList<Integer>> complexfam
     Integer[] subdivlabels = {0,0,0,0,0};
     Boolean[] internallabel = {false,false,false,false,false};
     //get subdivlabel pts set to subdivlabel array
+
     //rewrite the original internal cycle.  Done once only...
     for (int i = 0; i < complex.size(); i++){
+      int j = i-1;
+      if (j == -1){
+        j = complex.size()-1;
+      }
       Integer nlabel = complex.get((i+1)%complex.size());
       Integer ilabel = complex.get(i);
       Integer[] lpair = {nlabel,ilabel};
@@ -192,15 +198,17 @@ ArrayList<ArrayList<Integer>> subdivide(ArrayList<ArrayList<Integer>> complexfam
       ArrayList<Integer> lpairal = new ArrayList<Integer>();
       Collections.addAll(lpairal, lpair);
       if (subdivEdges2.containsKey(lpairal)){
-        subdivlabels[i] = subdivEdges2.get(lpairal);
+        
+        subdivlabels[j] = subdivEdges2.get(lpairal);
 
       }
       else if (subdivEdges2.containsKey(lpair2al)){
-        subdivlabels[i] = subdivEdges2.get(lpair2al);
+        
+        subdivlabels[j] = subdivEdges2.get(lpair2al);
       }
       else{
         maxlabel[0] += 1;
-        subdivlabels[i] = maxlabel[0];
+        subdivlabels[j] = maxlabel[0];
         subdivEdges.put(lpair2, maxlabel[0]);
         subdivEdges2.put(lpair2al, maxlabel[0]);
       }
@@ -208,19 +216,19 @@ ArrayList<ArrayList<Integer>> subdivide(ArrayList<ArrayList<Integer>> complexfam
         ArrayList<Integer> cycle = internal.get(nlabel);
         Integer ilcind = cycle.indexOf(ilabel);
         if (ilcind != -1){
-          cycle.set(ilcind, subdivlabels[i]);
+          cycle.set(ilcind, subdivlabels[j]);
         }
       }
       if (internal.containsKey(ilabel)){
         ArrayList<Integer> cycle = internal.get(ilabel);
         Integer nlcind = cycle.indexOf(nlabel);
         if (nlcind != -1){
-          cycle.set(nlcind, subdivlabels[i]);
+          cycle.set(nlcind, subdivlabels[j]);
         }
       }
 
-      if (internal.containsKey(subdivlabels[i])){
-        internal.get(subdivlabels[i]).add(isubdivlabels[i]);
+      if (internal.containsKey(subdivlabels[j])){
+        internal.get(subdivlabels[j]).add(isubdivlabels[i]);
       }
       else{
         if (internal.containsKey(ilabel)&&internal.containsKey(nlabel)){
@@ -229,10 +237,10 @@ ArrayList<ArrayList<Integer>> subdivide(ArrayList<ArrayList<Integer>> complexfam
           cycle.add(nlabel);
           cycle.add(isubdivlabels[i]);
           cycle.add(ilabel);
-          internal.put(subdivlabels[i],cycle);
+          internal.put(subdivlabels[j],cycle);
         }
         else{
-          external.put(subdivlabels[i], Eradius);
+          external.put(subdivlabels[j], Eradius);
         }
       }
       
@@ -246,19 +254,27 @@ ArrayList<ArrayList<Integer>> subdivide(ArrayList<ArrayList<Integer>> complexfam
         pi = isubdivlabels.length-1;
       }
       Integer label2 = isubdivlabels[pi];
-      Integer label3 = subdivlabels[i];
+      Integer label3 = subdivlabels[pi];
       ArrayList<Integer> cycle = new ArrayList<Integer>();
       Collections.addAll(cycle, new Integer[] {label1,label2,label3});
       internal.put(isubdivlabels[i], cycle);
       label1 = isubdivlabels[i];
-      label2 = subdivlabels[i];
-      label3 = complex.get(i);
-      Integer label4 = subdivlabels[(i+1)%subdivlabels.length];
+      label2 = subdivlabels[(pi)%5];
+      label3 = complex.get((i+1)%5);
+      if (pass == 1){
+        label3 = complex.get(i);
+      }
+      Integer label4 = subdivlabels[(i)%subdivlabels.length];
       Integer label5 = isubdivlabels[(i+1)%isubdivlabels.length];
       ArrayList<Integer> ncomplex = new ArrayList<Integer>();
       Collections.addAll(ncomplex, new Integer[] {label1,label2,label3,label4,label5});
       inner5.add(isubdivlabels[i]);
       nout.add(ncomplex);
+      int j = i -1;
+      if (j == -1){
+        j = 4;
+      }
+
     }
     nout.add(inner5);
     //Integer label6 = maxlabel[0];
@@ -334,6 +350,7 @@ void setup(){
   complexfamily.add(ivgraph);
   Integer[] maxlabel = {5};
   complexfamily = subdivide(complexfamily, internal, external, maxlabel);
+  pass += 1;
   complexfamily = subdivide(complexfamily, internal, external, maxlabel);
   println(internal);
   println(external);

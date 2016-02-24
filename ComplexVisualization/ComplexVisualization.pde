@@ -284,12 +284,9 @@ ArrayList<ArrayList<Integer>> subdivide(ArrayList<ArrayList<Integer>> complexfam
       label1 = isubdivlabels[i];
       label2 = subdivlabels[(pi)%5];
       label3 = complex.get((i+1)%5);
-      Integer[] tset = {1,2,3,4,5};
-      ArrayList<Integer> tsetal = new ArrayList<Integer>();
-      Collections.addAll(tsetal, tset);
-      //if (tsetal.contains(label3)){
-      //  label3 = complex.get(i);
-      //}
+      if (pass == 1){
+        label3 = complex.get(i);
+      }
       Integer label4 = subdivlabels[(i)%subdivlabels.length];
       Integer label5 = isubdivlabels[(i+1)%isubdivlabels.length];
       ArrayList<Integer> ncomplex = new ArrayList<Integer>();
@@ -326,8 +323,11 @@ void triangulateComplex(ArrayList<ArrayList<Integer>> complexfamily,
                         Integer[] maxlabel){
     Integer tlabelSize = complexfamily.size()+1;
     ArrayList<Integer> newLabels = new ArrayList<Integer>();
+    ArrayList<Polygon> cpolys = PFamily.get(PFamily.size()-1);
     for (int i = 0; i < complexfamily.size(); i++){
       maxlabel[0] += 1;
+      pointToLabel.put(cpolys.get(i).center, maxlabel[0]);
+      labelToPoint.put(maxlabel[0], cpolys.get(i).center);
       newLabels.add(maxlabel[0]);
       ArrayList<Integer> cycle = new ArrayList<Integer>(complexfamily.get(i));
       internal.put(maxlabel[0], cycle);
@@ -392,7 +392,7 @@ void setup() {
   complexfamily = subdivide(complexfamily, internal, external, maxlabel);
   pass += 1;
   complexfamily = subdivide(complexfamily, internal, external, maxlabel);
-  complexfamily = subdivide(complexfamily, internal, external, maxlabel);
+  //complexfamily = subdivide(complexfamily, internal, external, maxlabel);
  
 }
 

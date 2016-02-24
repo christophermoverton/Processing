@@ -231,7 +231,7 @@ ArrayList<ArrayList<Integer>> subdivide(ArrayList<ArrayList<Integer>> complexfam
         internal.get(subdivlabels[j]).add(isubdivlabels[i]);
       }
       else{
-        if (internal.containsKey(ilabel)&&internal.containsKey(nlabel)){
+        if (!external.containsKey(ilabel)||!external.containsKey(nlabel)){
           //set internal
           ArrayList<Integer> cycle = new ArrayList<Integer>();
           cycle.add(nlabel);
@@ -351,6 +351,7 @@ void setup(){
   Integer[] maxlabel = {5};
   complexfamily = subdivide(complexfamily, internal, external, maxlabel);
   pass += 1;
+  complexfamily = subdivide(complexfamily, internal, external, maxlabel);
   complexfamily = subdivide(complexfamily, internal, external, maxlabel);
   println(internal);
   println(external);

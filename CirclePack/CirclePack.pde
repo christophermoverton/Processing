@@ -6,9 +6,9 @@ Compute circle packings according to the Koebe-Thurston-Andreev theory,
 Following a numerical algorithm by C. R. Collins and K. Stephenson,
 "A Circle Packing Algorithm", Comp. Geom. Theory and Appl. 2003.
 */
-float Eradius = 60.0;
+float Eradius = 30.0;
 float tolerance  = 1.0+1.0e-12;
-Integer iterationMax = 3000;
+Integer iterationMax = 8000;
 ArrayList<ArrayList<Integer>> ComplexFamily = new ArrayList<ArrayList<Integer>>();
 
 class Circle{
@@ -296,10 +296,10 @@ void triangulateComplex(ArrayList<ArrayList<Integer>> complexfamily,
           Integer nlabel1 = cycle.get(ni1);
           Integer nlabel2 = cycle.get(ni2);
           ArrayList<Integer> vpetal = internal.get(v);
-          println(nlabel1);
-          println(nlabel2);
-          println(v);
-          println(vpetal);
+          //println(nlabel1);
+          //println(nlabel2);
+          //println(v);
+          //println(vpetal);
           Integer vpind1 = vpetal.indexOf(nlabel1);
           Integer vpind2 = vpetal.indexOf(nlabel2);
           boolean t1 = vpind1 == 0 || vpind1 == (vpetal.size()-1);
@@ -338,6 +338,18 @@ void setup(){
   println(internal);
   println(external);
   println(complexfamily);
+  HashMap<Integer, Integer> vcount = new HashMap<Integer,Integer>();
+  for(ArrayList<Integer> cycle: complexfamily){
+    for(Integer v: cycle){
+      if (vcount.containsKey(v)){
+        vcount.put(v, vcount.get(v)+1);
+      }
+      else{
+        vcount.put(v, 1);
+      }
+    }
+  }
+  println(vcount);
   triangulateComplex(complexfamily,internal, maxlabel);
   println(internal);
   circlePack(internal, external, out);

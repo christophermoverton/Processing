@@ -291,17 +291,22 @@ ArrayList<ArrayList<Integer>> subdivide(ArrayList<ArrayList<Integer>> complexfam
   return nout;
 }
 
-void triangulateComplex(ArrayList<ArrayList<Integer>> complexfamily,
-                        HashMap<Integer, ArrayList<Integer>> internal, 
+void triangulateComplex(HashMap<Integer, ArrayList<Integer>> internal, 
                         Integer[] maxlabel){
-    Integer tlabelSize = complexfamily.size()+1;
+    Integer tlabelSize = ComplexFamily.size()+1;
     ArrayList<Integer> newLabels = new ArrayList<Integer>();
-    for (int i = 0; i < complexfamily.size(); i++){
+    ArrayList<ArrayList<Integer>> ncomplexfamily = new ArrayList<ArrayList<Integer>>();
+    for (int i = 0; i < ComplexFamily.size(); i++){
       maxlabel[0] += 1;
       newLabels.add(maxlabel[0]);
-      ArrayList<Integer> cycle = new ArrayList<Integer>(complexfamily.get(i));
+      ArrayList<Integer> cycle = new ArrayList<Integer>(ComplexFamily.get(i));
       internal.put(maxlabel[0], cycle);
       for (int j = 0; j < cycle.size(); j++){
+        ArrayList<Integer> ncycle = new ArrayList<Integer>();
+        ncycle.add(maxlabel[0]);
+        ncycle.add(cycle.get(j));
+        ncycle.add(cycle.get((j+1)%cycle.size()));
+        ncomplexfamily.add(ncycle);
         Integer v = cycle.get(j);
         if (internal.containsKey(v)){
           Integer ni1 = j-1;
@@ -330,11 +335,14 @@ void triangulateComplex(ArrayList<ArrayList<Integer>> complexfamily,
         }
       }
     }
+    ComplexFamily = new ArrayList<ArrayList<Integer>>(ncomplexfamily);
 }
+
+HashMap<Integer, ArrayList<Integer>> internal;
 
 void setup(){
   size(1080,720);
-  HashMap<Integer, ArrayList<Integer>> internal = new HashMap<Integer, ArrayList<Integer>>();
+  internal = new HashMap<Integer, ArrayList<Integer>>();
   ArrayList<Integer> ivgraph = new ArrayList<Integer>();
   Integer[] ivgarr = {1,2,3,4,5};
   Collections.addAll(ivgraph,ivgarr);
@@ -347,17 +355,17 @@ void setup(){
   external.put(4,Eradius);
   external.put(5,Eradius);
   ArrayList<ArrayList<Integer>> complexfamily = new ArrayList<ArrayList<Integer>>();
-  complexfamily.add(ivgraph);
+  ComplexFamily.add(ivgraph);
   Integer[] maxlabel = {5};
-  complexfamily = subdivide(complexfamily, internal, external, maxlabel);
+  ComplexFamily = subdivide(ComplexFamily, internal, external, maxlabel);
   pass += 1;
-  complexfamily = subdivide(complexfamily, internal, external, maxlabel);
-  complexfamily = subdivide(complexfamily, internal, external, maxlabel);
+  //ComplexFamily = subdivide(ComplexFamily, internal, external, maxlabel);
+  //ComplexFamily = subdivide(ComplexFamily, internal, external, maxlabel);
   println(internal);
   println(external);
-  println(complexfamily);
+  println(ComplexFamily);
   HashMap<Integer, Integer> vcount = new HashMap<Integer,Integer>();
-  for(ArrayList<Integer> cycle: complexfamily){
+  for(ArrayList<Integer> cycle: ComplexFamily){
     for(Integer v: cycle){
       if (vcount.containsKey(v)){
         vcount.put(v, vcount.get(v)+1);
@@ -368,7 +376,10 @@ void setup(){
     }
   }
   println(vcount);
-  triangulateComplex(complexfamily,internal, maxlabel);
+  triangulateComplex(internal, maxlabel);
+  
+  //triangulateComplex(internal, maxlabel);
+  //triangulateComplex(internal, maxlabel);
   println(internal);
   circlePack(internal, external, out);
 }
@@ -380,6 +391,13 @@ void draw(){
     Circle circv = circ.getValue();
     noFill();
     stroke(255);
-    ellipse(circv.center.x, circv.center.y, 2*circv.radius, 2*circv.radius);
+    ellipse(circv.center.x, circv.center.y, 1.3*2*circv.radius, 1.3*2*circv.radius);
   }
+  for (Map.Entry<Integer,ArrayList<Integer>> intern : internal.entrySet()){
+    for (Integer av : intern.getValue()){
+      line(out.get(intern.getKey()).center.x, out.get(intern.getKey()).center.y,
+           out.get(av).center.x, out.get(av).center.y);
+    }
+  }
+  //saveFrame();
 }

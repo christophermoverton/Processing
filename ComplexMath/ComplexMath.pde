@@ -33,6 +33,24 @@ ArrayList<PVector> nthroot(PVector c, Float nroot){
   return roots;
 }
 
+PVector creq(PVector c, Float n){
+  //Cuachy Riemannn equations
+  //ArrayList<PVector> roots = new ArrayList<PVector>();
+  Float r = c.mag();
+  Float theta = c.heading();
+  Float rroot = pow(r, n);
+  //for (int i = 0; i < nroot; i++){
+  //  PVector cn = new PVector(cos((theta + i*2*PI)/nroot), sin((theta+i*2*PI)/nroot), 0.0);
+  //  roots.add(PVector.mult(cn, rroot));
+  //}
+  PVector cn = new PVector(cos(theta*n), sin(theta*n),0.0);
+  cn = PVector.mult(cn, rroot);
+  return cn;
+  
+}
+
+
+
 PVector ccos(PVector z){
   //complex cos function
   // cos(z) = cos(a)cosh(b) - isin(a) sinh(b)  making use 
@@ -54,15 +72,18 @@ PVector csin(PVector z){
 }
 
 Float cplaneinc = 9.0;
-Float cplanelineinc = 50.0;
+Float cplanelineinc = 10.0;
 Integer dimX = 1080;
 Integer dimY = 720;
 Float time = 1.0;
 Float timeinc = .01;
+boolean popm = true;
 
 ArrayList<ArrayList<PVector>> ConformalMap = new ArrayList<ArrayList<PVector>>(); 
 ArrayList<ArrayList<PVector>> ConformalMap2 = new ArrayList<ArrayList<PVector>>();
-ArrayList<ArrayList<PVector>> ConformalMap3 = new ArrayList<ArrayList<PVector>>(); 
+ArrayList<ArrayList<PVector>> ConformalMap3 = new ArrayList<ArrayList<PVector>>();
+ArrayList<ArrayList<PVector>> ConformalMap4 = new ArrayList<ArrayList<PVector>>();
+ArrayList<ArrayList<PVector>> ConformalMap5 = new ArrayList<ArrayList<PVector>>();
 void setup(){
   size(1080,720);
   
@@ -72,28 +93,36 @@ void setup(){
   PVector z = new PVector(-dimX,-dimY,0.0);
   while(z.x < dimX){
     ArrayList<PVector> nlist = new ArrayList<PVector>();
+    ArrayList<PVector> nlist2 = new ArrayList<PVector>();
+    
     while(z.y < dimY){
       z.y += cplaneinc;
       //println(z);
       //nlist.add(new PVector(z.x, z.y, 0.0));
       nlist.add(cdiv(new PVector(1.0, 0.0, 0.0), z));
+      nlist2.add(creq(z,-2.0));
+      
     }
     z.x += cplanelineinc;
     z.y = -dimY;
     ConformalMap.add(nlist);
+    ConformalMap5.add(nlist2);
   }
   z = new PVector(-dimX,-dimY,0.0);
   while(z.y < dimY){
     ArrayList<PVector> nlist = new ArrayList<PVector>();
+    ArrayList<PVector> nlist2 = new ArrayList<PVector>();
     while(z.x < dimX){
       z.x += cplaneinc;
       //println(z);
       //nlist.add(new PVector(z.x, z.y, 0.0));
       nlist.add(cdiv(new PVector(1.0, 0.0, 0.0), z));
+      nlist2.add(creq(z,-2.0));
     }
     z.y += cplanelineinc;
     z.x = -dimX;
     ConformalMap.add(nlist);
+    ConformalMap5.add(nlist2);
   }
   z = new PVector(-dimX,-dimY,0.0);
   while(z.x < dimX){
@@ -107,6 +136,7 @@ void setup(){
       ArrayList<PVector> roots = nthroot(z, 2.0);
       nlist.add(roots.get(0));
       nlist2.add(roots.get(1));
+      //nlist.add(nroot(z, 2.0));
     }
     z.x += cplanelineinc;
     z.y = -dimY;
@@ -125,6 +155,7 @@ void setup(){
       ArrayList<PVector> roots = nthroot(z, 2.0);
       nlist.add(roots.get(0));
       nlist2.add(roots.get(1));     
+      //nlist.add(nroot(z, 2.0));
     }
     z.y += cplanelineinc;
     z.x = -dimX;
@@ -163,6 +194,41 @@ void setup(){
     ConformalMap3.add(nlist);
     //println(ConformalMap3);
   }
+  z = new PVector(-dimX,-dimY,0.0);
+  while(z.x < dimX){
+    ArrayList<PVector> nlist = new ArrayList<PVector>();
+    ArrayList<PVector> nlist2 = new ArrayList<PVector>();
+    while(z.y < dimY){
+      z.y += cplaneinc;
+      //println(z);
+      //nlist.add(new PVector(z.x, z.y, 0.0));
+      //nlist.add(cdiv(new PVector(1.0, 0.0, 0.0), z));
+      ArrayList<PVector> roots = nthroot(cdiv(new PVector(1.0, 0.0, 0.0), z), 2.0);
+      nlist.add(roots.get(0));
+      nlist2.add(roots.get(1));
+    }
+    z.x += cplanelineinc;
+    z.y = -dimY;
+    ConformalMap4.add(nlist);
+    ConformalMap4.add(nlist2);
+  }
+  z = new PVector(-dimX,-dimY,0.0);
+  while(z.y < dimY){
+    ArrayList<PVector> nlist = new ArrayList<PVector>();
+    ArrayList<PVector> nlist2 = new ArrayList<PVector>();
+    while(z.x < dimX){
+      z.x += cplaneinc;
+      //println(z);
+      //nlist.add(new PVector(z.x, z.y, 0.0));
+      ArrayList<PVector> roots = nthroot(cdiv(new PVector(1.0, 0.0, 0.0), z), 2.0);
+      nlist.add(roots.get(0));
+      nlist2.add(roots.get(1));
+    }
+    z.y += cplanelineinc;
+    z.x = -dimX;
+    ConformalMap4.add(nlist);
+    ConformalMap4.add(nlist2);
+  }
 }
 
 void draw(){
@@ -183,6 +249,9 @@ void draw(){
      }
      endShape();
    }
+   fill(255);
+   textSize(12);
+   text("1/z",-100.0,-100.0);  
   }
   
   else if (time < 3.0){
@@ -193,17 +262,57 @@ void draw(){
        curveVertex(2.5*curvept.x, 2.5*curvept.y);
     }
     endShape();
+    }
+   fill(255);
+   textSize(6);
+   text("square root z",-100.0,-100.0);  
   }
-  }
-  else{
-   scale(time);
+  else if (time < 4.0){
+   strokeWeight(.1*1/time);
+   scale(6.0*time);
    for (ArrayList<PVector> curvepts : ConformalMap3){
      beginShape();
      for(PVector curvept : curvepts){
        curveVertex(curvept.x, curvept.y);
-    }
-    endShape();
+     }
+     endShape();
+   }
+   fill(255);
+   textSize(1);
+   text("Cos(z)",-5.0,-5.0);  
   }
+  else if (time < 5.0){
+  
+   if (popm){
+     pushMatrix();
+     popMatrix();
+     translate(dimX/2, dimY/2);
+     popm = false;
+   }
+   scale(time);
+   for (ArrayList<PVector> curvepts : ConformalMap4){
+     beginShape();
+     for(PVector curvept : curvepts){
+       curveVertex(400.0*curvept.x, 400.0*curvept.y);
+     }
+     endShape();
+   }
+   fill(255);
+   textSize(5);
+   text("1/sqroot(z)",-30.0,-30.0); 
+  }
+  else{
+   scale(time);
+   for (ArrayList<PVector> curvepts : ConformalMap5){
+     beginShape();
+     for(PVector curvept : curvepts){
+       curveVertex(1000000.0*curvept.x, 1000000.0*curvept.y);
+     }
+     endShape();
+   }
+   fill(255);
+   textSize(5);
+   text("1/z^2",-30.0,-30.0); 
   }
   //scale(6.0*time);
   //for (ArrayList<PVector> curvepts : ConformalMap3){

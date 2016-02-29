@@ -71,8 +71,8 @@ PVector csin(PVector z){
   return new PVector(a,b, 0.0);
 }
 
-Float cplaneinc = 9.0;
-Float cplanelineinc = 10.0;
+Float cplaneinc = 6.0;
+Float cplanelineinc = 5.0;
 Integer dimX = 1080;
 Integer dimY = 720;
 Float time = 1.0;
@@ -84,6 +84,7 @@ ArrayList<ArrayList<PVector>> ConformalMap2 = new ArrayList<ArrayList<PVector>>(
 ArrayList<ArrayList<PVector>> ConformalMap3 = new ArrayList<ArrayList<PVector>>();
 ArrayList<ArrayList<PVector>> ConformalMap4 = new ArrayList<ArrayList<PVector>>();
 ArrayList<ArrayList<PVector>> ConformalMap5 = new ArrayList<ArrayList<PVector>>();
+ArrayList<ArrayList<PVector>> ConformalMap6 = new ArrayList<ArrayList<PVector>>();
 void setup(){
   size(1080,720);
   
@@ -94,6 +95,7 @@ void setup(){
   while(z.x < dimX){
     ArrayList<PVector> nlist = new ArrayList<PVector>();
     ArrayList<PVector> nlist2 = new ArrayList<PVector>();
+    ArrayList<PVector> nlist3 = new ArrayList<PVector>();
     
     while(z.y < dimY){
       z.y += cplaneinc;
@@ -101,28 +103,33 @@ void setup(){
       //nlist.add(new PVector(z.x, z.y, 0.0));
       nlist.add(cdiv(new PVector(1.0, 0.0, 0.0), z));
       nlist2.add(creq(z,-2.0));
+      nlist3.add(creq(z,2.0));
       
     }
     z.x += cplanelineinc;
     z.y = -dimY;
     ConformalMap.add(nlist);
     ConformalMap5.add(nlist2);
+    ConformalMap6.add(nlist3);
   }
   z = new PVector(-dimX,-dimY,0.0);
   while(z.y < dimY){
     ArrayList<PVector> nlist = new ArrayList<PVector>();
     ArrayList<PVector> nlist2 = new ArrayList<PVector>();
+    ArrayList<PVector> nlist3 = new ArrayList<PVector>();
     while(z.x < dimX){
       z.x += cplaneinc;
       //println(z);
       //nlist.add(new PVector(z.x, z.y, 0.0));
       nlist.add(cdiv(new PVector(1.0, 0.0, 0.0), z));
       nlist2.add(creq(z,-2.0));
+      nlist3.add(creq(z,2.0));
     }
     z.y += cplanelineinc;
     z.x = -dimX;
     ConformalMap.add(nlist);
     ConformalMap5.add(nlist2);
+    ConformalMap6.add(nlist3);
   }
   z = new PVector(-dimX,-dimY,0.0);
   while(z.x < dimX){
@@ -229,6 +236,7 @@ void setup(){
     ConformalMap4.add(nlist);
     ConformalMap4.add(nlist2);
   }
+  
 }
 
 void draw(){
@@ -259,7 +267,7 @@ void draw(){
    for (ArrayList<PVector> curvepts : ConformalMap2){
      beginShape();
      for(PVector curvept : curvepts){
-       curveVertex(2.5*curvept.x, 2.5*curvept.y);
+       curveVertex(5.0*curvept.x, 5.0*curvept.y);
     }
     endShape();
     }
@@ -267,13 +275,13 @@ void draw(){
    textSize(6);
    text("square root z",-100.0,-100.0);  
   }
-  else if (time < 4.0){
+  else if (time < 6.0){
    strokeWeight(.1*1/time);
    scale(6.0*time);
    for (ArrayList<PVector> curvepts : ConformalMap3){
      beginShape();
      for(PVector curvept : curvepts){
-       curveVertex(curvept.x, curvept.y);
+       curveVertex(3.0*curvept.x, 3.0*curvept.y);
      }
      endShape();
    }
@@ -281,14 +289,14 @@ void draw(){
    textSize(1);
    text("Cos(z)",-5.0,-5.0);  
   }
-  else if (time < 5.0){
+  else if (time < 9.0){
   
-   if (popm){
-     pushMatrix();
-     popMatrix();
-     translate(dimX/2, dimY/2);
-     popm = false;
-   }
+   //if (popm){
+   //  pushMatrix();
+   //  popMatrix();
+   //  translate(dimX/2, dimY/2);
+   //  popm = false;
+   //}
    scale(time);
    for (ArrayList<PVector> curvepts : ConformalMap4){
      beginShape();
@@ -301,7 +309,7 @@ void draw(){
    textSize(5);
    text("1/sqroot(z)",-30.0,-30.0); 
   }
-  else{
+  else if (time < 12.0) {
    scale(time);
    for (ArrayList<PVector> curvepts : ConformalMap5){
      beginShape();
@@ -313,6 +321,22 @@ void draw(){
    fill(255);
    textSize(5);
    text("1/z^2",-30.0,-30.0); 
+  }
+  else if (time < 15.0){
+   scale(time);
+   for (ArrayList<PVector> curvepts : ConformalMap6){
+     beginShape();
+     for(PVector curvept : curvepts){
+       curveVertex(.0001*curvept.x, .0001*curvept.y);
+     }
+     endShape();
+   }
+   fill(255);
+   textSize(5);
+   text("z^2",-10.0,-10.0); 
+  }
+  else{
+    time = 0.0;
   }
   //scale(6.0*time);
   //for (ArrayList<PVector> curvepts : ConformalMap3){

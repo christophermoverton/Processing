@@ -645,8 +645,8 @@ void triangulateComplex2(HashMap<Integer, ArrayList<Integer>> internal,
             pol[4] = innersubdivmidgon[i];
             pol[5] = innersubdivmidgon[j];
             pol[6] = innercentroiddiv[im];
-            pol[7] = innercentroiddiv[jm];
-            pol[8] = innercentroiddiv[km];
+            pol[7] = innercentroiddiv[jm]; 
+            pol[8] = innercentroiddiv[km]; //pol[8] -> {pol[4],pol[6],pol[7],pol[5],pol[2]}
             ArrayList<Integer> ncycle = new ArrayList<Integer>();
             Collections.addAll(ncycle, pol);
             ncomplexfamily.add(ncycle);
@@ -661,6 +661,17 @@ void triangulateComplex2(HashMap<Integer, ArrayList<Integer>> internal,
               ncycle = new ArrayList<Integer>();
               Collections.addAll(ncycle, new Integer[]{pol[4],pol[8],pol[5]});
               internal.put(pol[2],ncycle);
+            }
+            if (internal.containsKey(pol[3])){
+              ArrayList insertcycle = new ArrayList<Integer>();
+              Collections.addAll(insertcycle, new Integer[] {pol[7],pol[6]});
+              insertcycle.addAll(internal.get(pol[3]));
+              internal.put(pol[3], insertcycle);
+            }
+            else{
+              ncycle = new ArrayList<Integer>();
+              Collections.addAll(ncycle, new Integer[]{pol[1],pol[7],pol[6],pol[0]});
+              internal.put(pol[3],ncycle);
             }
             if (internal.containsKey(pol[5])){
               ArrayList insertcycle = new ArrayList<Integer>();
@@ -681,6 +692,18 @@ void triangulateComplex2(HashMap<Integer, ArrayList<Integer>> internal,
               Collections.addAll(ncycle, new Integer[]{pol[1],pol[7],pol[6],pol[0]});
               internal.put(pol[4],ncycle);
             }
+            ncycle = new ArrayList<Integer>();
+            //pol[6] -> {pol[0],pol[3],pol[7],pol[8],pol[4]}
+            Collections.addAll(ncycle, new Integer[]{pol[0],pol[3],pol[7],pol[8],pol[4]});
+            internal.put(pol[6], ncycle);
+            ncycle = new ArrayList<Integer>();
+            //pol[7] -> {pol[3], pol[1], pol[5], pol[8],pol[6]}
+            Collections.addAll(ncycle, new Integer[]{pol[3], pol[1], pol[5], pol[8],pol[6]});
+            internal.put(pol[7], ncycle);
+            ncycle = new ArrayList<Integer>();
+            //pol[8] -> {pol[4],pol[6],pol[7],pol[5],pol[2]}
+            Collections.addAll(ncycle, new Integer[]{pol[4],pol[6],pol[7],pol[5],pol[2]});
+            internal.put(pol[8], ncycle);
           }
           else{
             Integer j = (i+1)%innersubdiv1.length;

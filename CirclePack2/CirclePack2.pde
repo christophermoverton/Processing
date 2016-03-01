@@ -542,7 +542,7 @@ void triangulateComplex2(HashMap<Integer, ArrayList<Integer>> internal,
                                       62,63,64,65,66,67,68,69,70,71};
         Integer[] outersubdivmid4gon = {72,73,74,75,76,77,78,79,80,81};
         Integer[] innersubdivmidgon = {82,83,84,85,86,87,88,89,90,91};
-        Integer[] mapoutertocent = {0,1,3,5,6,8,9,11,12,14};
+        Integer[] mapoutertocent = {0,2,3,5,6,8,9,11,12,14};
         Integer[] mapinnertoicent = {0,3,5,8,10,13,15,18,20,23};
         Integer[] mapinnertoinner2 = {0,0,1,1,2,2,3,3,4,4};
         Float[] divEradii = {0.0,0.0,0.0};
@@ -565,14 +565,14 @@ void triangulateComplex2(HashMap<Integer, ArrayList<Integer>> internal,
             pol[7] = outercentroiddiv[jm];
             Collections.addAll(ncycle,pol);
             ncomplexfamily.add(ncycle);
-            Integer[] pol1 = {pol[0],pol[4],pol[6]};
-            Integer[] pol2 = {pol[0],pol[6],pol[2]};
-            Integer[] pol3 = {pol[2],pol[6],pol[5]};
-            Integer[] pol4 = {pol[4],pol[7],pol[6]};
-            Integer[] pol5 = {pol[5],pol[6],pol[7]};
-            Integer[] pol6 = {pol[4],pol[1],pol[7]};
-            Integer[] pol7 = {pol[1],pol[3],pol[7]};
-            Integer[] pol8 = {pol[3],pol[5],pol[7]};
+            //Integer[] pol1 = {pol[0],pol[6],pol[4]};
+            //Integer[] pol2 = {pol[0],pol[6],pol[2]};
+            //Integer[] pol3 = {pol[2],pol[6],pol[5]};
+            //Integer[] pol4 = {pol[4],pol[7],pol[6]};
+            //Integer[] pol5 = {pol[5],pol[6],pol[7]};
+            //Integer[] pol6 = {pol[4],pol[1],pol[7]};
+            //Integer[] pol7 = {pol[1],pol[3],pol[7]};
+            //Integer[] pol8 = {pol[3],pol[5],pol[7]};
             Integer[] icycle1 = {pol[0],pol[6],pol[5]}; // key pol[2]
             Integer[] icycle2 = {pol[0],pol[4],pol[7], pol[5], pol[2]}; //key pol[6]
             Integer[] icycle3 = {pol[1],pol[3],pol[5], pol[6], pol[4]};//key pol[7]
@@ -611,12 +611,15 @@ void triangulateComplex2(HashMap<Integer, ArrayList<Integer>> internal,
             ArrayList<Integer> icycle = new ArrayList<Integer>();
             Collections.addAll(icycle,icycle1);
             internal.put(pol[5], icycle);
-            internal.get(pol[3]).add(pol[4]);
+            Collections.addAll(internal.get(pol[3]),new Integer[] {pol[5],pol[4]});
             if (internal.containsKey(pol[4])){
-              internal.get(pol[4]).add(0,pol[3]);
+              ncycle = new ArrayList<Integer>();
+              Collections.addAll(ncycle, new Integer[] {pol[3], pol[5]});
+              ncycle.addAll(internal.get(pol[4]));
+              internal.put(pol[4],ncycle);
             }
             else{
-              Integer[] icycle2 = {pol[3],pol[2]};
+              Integer[] icycle2 = {pol[3],pol[5]};
               icycle = new ArrayList<Integer>();
               Collections.addAll(icycle, icycle2);
               internal.put(pol[4],icycle);
@@ -641,7 +644,7 @@ void triangulateComplex2(HashMap<Integer, ArrayList<Integer>> internal,
             pol[0] = innersubdiv1[i];
             pol[1] = innersubdiv1[j];
             pol[2] = innersubdiv2[in];
-            pol[3] = outersubdivmid4gon[i];
+            pol[3] = outersubdivmid4gon[j];
             pol[4] = innersubdivmidgon[i];
             pol[5] = innersubdivmidgon[j];
             pol[6] = innercentroiddiv[im];
@@ -652,8 +655,10 @@ void triangulateComplex2(HashMap<Integer, ArrayList<Integer>> internal,
             ncomplexfamily.add(ncycle);
             ncycle = new ArrayList<Integer>();
             Collections.addAll(internal.get(pol[0]), new Integer[] {pol[6],pol[4]});
-            internal.get(pol[1]).add(0,pol[5]);
-            internal.get(pol[1]).add(0,pol[7]);
+            //insert on pol[1]
+            Collections.addAll(ncycle, new Integer[] {pol[5], pol[7]});
+            ncycle.addAll(internal.get(pol[1]));
+            internal.put(pol[1],ncycle);
             if (internal.containsKey(pol[2])){
               Collections.addAll(internal.get(pol[2]), new Integer[] {pol[8],pol[5]});
             }
@@ -863,7 +868,7 @@ void setup(){
   Integer[] ivgarr = {1,2,3,4,5};
   Collections.addAll(ivgraph,ivgarr);
   println(ivgraph);
-  internal.put(6, ivgraph);
+  //internal.put(6, ivgraph);
   HashMap<Integer, Float> external = new HashMap<Integer,Float>();
   external.put(1,Eradius);
   external.put(2,Eradius);

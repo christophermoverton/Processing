@@ -7,7 +7,7 @@ Following a numerical algorithm by C. R. Collins and K. Stephenson,
 "A Circle Packing Algorithm", Comp. Geom. Theory and Appl. 2003.
 */
 Integer pass = 1;
-float Eradius = 30.0;
+float Eradius = 200.0;
 float Efactor = 1.3;
 float tolerance  = 1.0+1.0e-12;
 Integer iterationMax = 8000;
@@ -507,7 +507,7 @@ void getEradius(Boolean polytype, Float inputR, Float[] out){
   //if polytype is 4gon then inputR is 1/3 sidelength and not 1/2*sidelength as
   ///in the case of 5gon (false).
   if (polytype){
-    out = new Float[3];
+    //out = new Float[3];
     Float sidelength = abs(3.0*inputR/2.0*(1+Efactor)); //on subdiv 4 gon sl
     Float sidelength2 = abs(inputR*Efactor-sidelength);
     Float sidelength3 = abs(abs(3.0*inputR/2.0 - Efactor*inputR/2.0)-sidelength);
@@ -516,7 +516,7 @@ void getEradius(Boolean polytype, Float inputR, Float[] out){
     out[2] = sidelength3/2.0;
   }
   else{
-    out = new Float[2];
+    //out = new Float[2];
     Float sidelength =  abs(2.0*inputR-2.0*inputR*Efactor);
     Float sidelength2 = inputR*Efactor-sidelength;
     out[0] = sidelength/3.0;
@@ -595,7 +595,7 @@ void triangulateComplex2(HashMap<Integer, ArrayList<Integer>> internal,
           }
           else{
             ncycle = new ArrayList<Integer>();
-            Integer v = i/2;
+            Integer v = (i+1)/2;
             Integer[] pol = {0,0,0,0,0,0};
             //write outer 8 polys for 4gon labeling
             Integer j = (i+1)%outersubdiv.length;
@@ -631,182 +631,145 @@ void triangulateComplex2(HashMap<Integer, ArrayList<Integer>> internal,
         }
         //write next inner level loop of polygons 
         for(int i = 0; i < innersubdiv1.length; i++){
-          Integer im = mapinnertoicent[i];
-          Integer jm = (im+1)%innercentroiddiv.length;
-          if (i % 2 == 0){
-            Integer j = (i+1)%innersubdiv1.length;
-            Integer km = (im+2)%innercentroiddiv.length;
-            Integer in = mapinnertoinner2[i];
-            //write 3gon 
-            Integer[] pol = {0,0,0,0,0,0,0,0,0};
-            //write outer 8 polys for 4gon labeling
+         Integer im = mapinnertoicent[i];
+         Integer jm = (im+1)%innercentroiddiv.length;
+         if (i % 2 == 0){
+           Integer j = (i+1)%innersubdiv1.length;
+           Integer km = (im+2)%innercentroiddiv.length;
+           Integer in = mapinnertoinner2[i];
+           //write 3gon 
+           Integer[] pol = {0,0,0,0,0,0,0,0,0};
+           //write outer 8 polys for 4gon labeling
            
-            pol[0] = innersubdiv1[i];
-            pol[1] = innersubdiv1[j];
-            pol[2] = innersubdiv2[in];
-            pol[3] = outersubdivmid4gon[j];
-            pol[4] = innersubdivmidgon[i];
-            pol[5] = innersubdivmidgon[j];
-            pol[6] = innercentroiddiv[im];
-            pol[7] = innercentroiddiv[jm]; 
-            pol[8] = innercentroiddiv[km]; //pol[8] -> {pol[4],pol[6],pol[7],pol[5],pol[2]}
-            ArrayList<Integer> ncycle = new ArrayList<Integer>();
-            Collections.addAll(ncycle, pol);
-            ncomplexfamily.add(ncycle);
-            ncycle = new ArrayList<Integer>();
-            Collections.addAll(internal.get(pol[0]), new Integer[] {pol[6],pol[4]});
-            //insert on pol[1]
-            Collections.addAll(ncycle, new Integer[] {pol[5], pol[7]});
-            ncycle.addAll(internal.get(pol[1]));
-            internal.put(pol[1],ncycle);
-            if (internal.containsKey(pol[2])){
-              Collections.addAll(internal.get(pol[2]), new Integer[] {pol[8],pol[5]});
-            }
-            else{
-              ncycle = new ArrayList<Integer>();
-              Collections.addAll(ncycle, new Integer[]{pol[4],pol[8],pol[5]});
-              internal.put(pol[2],ncycle);
-            }
-            if (internal.containsKey(pol[3])){
-              ArrayList insertcycle = new ArrayList<Integer>();
-              Collections.addAll(insertcycle, new Integer[] {pol[7],pol[6]});
-              insertcycle.addAll(internal.get(pol[3]));
-              internal.put(pol[3], insertcycle);
-            }
-            else{
-              ncycle = new ArrayList<Integer>();
-              Collections.addAll(ncycle, new Integer[]{pol[1],pol[7],pol[6],pol[0]});
-              internal.put(pol[3],ncycle);
-            }
-            if (internal.containsKey(pol[5])){
-              ArrayList insertcycle = new ArrayList<Integer>();
-              Collections.addAll(insertcycle, new Integer[] {pol[8],pol[7]});
-              insertcycle.addAll(internal.get(pol[5]));
-              internal.put(pol[5], insertcycle);
-            }
-            else{
-              ncycle = new ArrayList<Integer>();
-              Collections.addAll(ncycle, new Integer[]{pol[2],pol[8],pol[7],pol[1]});
-              internal.put(pol[5],ncycle);
-            }
-            if (internal.containsKey(pol[4])){
-              Collections.addAll(internal.get(pol[4]), new Integer[] {pol[7],pol[6]});
-            }
-            else{
-              ncycle = new ArrayList<Integer>();
-              Collections.addAll(ncycle, new Integer[]{pol[1],pol[7],pol[6],pol[0]});
-              internal.put(pol[4],ncycle);
-            }
-            ncycle = new ArrayList<Integer>();
-            //pol[6] -> {pol[0],pol[3],pol[7],pol[8],pol[4]}
-            Collections.addAll(ncycle, new Integer[]{pol[0],pol[3],pol[7],pol[8],pol[4]});
-            internal.put(pol[6], ncycle);
-            ncycle = new ArrayList<Integer>();
-            //pol[7] -> {pol[3], pol[1], pol[5], pol[8],pol[6]}
-            Collections.addAll(ncycle, new Integer[]{pol[3], pol[1], pol[5], pol[8],pol[6]});
-            internal.put(pol[7], ncycle);
-            ncycle = new ArrayList<Integer>();
-            //pol[8] -> {pol[4],pol[6],pol[7],pol[5],pol[2]}
-            Collections.addAll(ncycle, new Integer[]{pol[4],pol[6],pol[7],pol[5],pol[2]});
-            internal.put(pol[8], ncycle);
-          }
-          else{
-            Integer j = (i+1)%innersubdiv1.length;
-            Integer km = (im+2)%innercentroiddiv.length;
-            Integer in = mapinnertoinner2[i];
-            Integer jn = (in+1)%innersubdiv2.length;
-            //write 3gon 
-            Integer[] pol = {0,0,0,0,0,0,0,0,0};
-            Integer[] pol2 = {0,0,0,0,0,0,0,0,0};
-            //write outer 8 polys for 4gon labeling
+           pol[0] = innersubdiv1[i];
+           pol[1] = innersubdiv1[j];
+           pol[2] = innersubdiv2[in];
+           pol[3] = outersubdivmid4gon[j];
+           pol[4] = innersubdivmidgon[i];
+           pol[5] = innersubdivmidgon[j];
+           pol[6] = innercentroiddiv[im];
+           pol[7] = innercentroiddiv[jm]; 
+           pol[8] = innercentroiddiv[km]; //pol[8] -> {pol[4],pol[6],pol[7],pol[5],pol[2]}
+           ArrayList<Integer> ncycle = new ArrayList<Integer>();
+           Collections.addAll(ncycle, pol);
+           ncomplexfamily.add(ncycle);
+           ncycle = new ArrayList<Integer>();
+           Collections.addAll(internal.get(pol[0]), new Integer[] {pol[6],pol[4]});
+           //insert on pol[1]
+           Collections.addAll(ncycle, new Integer[] {pol[5], pol[7]});
+           ncycle.addAll(internal.get(pol[1]));
+           internal.put(pol[1],ncycle);
+           if (internal.containsKey(pol[2])){
+             Collections.addAll(internal.get(pol[2]), new Integer[] {pol[8],pol[5]});
+           }
+           else{
+             ncycle = new ArrayList<Integer>();
+             Collections.addAll(ncycle, new Integer[]{pol[4],pol[8],pol[5]});
+             internal.put(pol[2],ncycle);
+           }
+           if (internal.containsKey(pol[3])){
+             ArrayList insertcycle = new ArrayList<Integer>();
+             Collections.addAll(insertcycle, new Integer[] {pol[7],pol[6]});
+             insertcycle.addAll(internal.get(pol[3]));
+             internal.put(pol[3], insertcycle);
+           }
+           else{
+             ncycle = new ArrayList<Integer>();
+             Collections.addAll(ncycle, new Integer[]{pol[1],pol[7],pol[6],pol[0]});
+             internal.put(pol[3],ncycle);
+           }
+           if (internal.containsKey(pol[5])){
+             ArrayList insertcycle = new ArrayList<Integer>();
+             Collections.addAll(insertcycle, new Integer[] {pol[8],pol[7]});
+             insertcycle.addAll(internal.get(pol[5]));
+             internal.put(pol[5], insertcycle);
+           }
+           else{
+             ncycle = new ArrayList<Integer>();
+             Collections.addAll(ncycle, new Integer[]{pol[2],pol[8],pol[7],pol[1]});
+             internal.put(pol[5],ncycle);
+           }
+           if (internal.containsKey(pol[4])){
+             Collections.addAll(internal.get(pol[4]), new Integer[] {pol[7],pol[6]});
+           }
+           else{
+             ncycle = new ArrayList<Integer>();
+             Collections.addAll(ncycle, new Integer[]{pol[1],pol[7],pol[6],pol[0]});
+             internal.put(pol[4],ncycle);
+           }
+           ncycle = new ArrayList<Integer>();
+           //pol[6] -> {pol[0],pol[3],pol[7],pol[8],pol[4]}
+           Collections.addAll(ncycle, new Integer[]{pol[0],pol[3],pol[7],pol[8],pol[4]});
+           internal.put(pol[6], ncycle);
+           ncycle = new ArrayList<Integer>();
+           //pol[7] -> {pol[3], pol[1], pol[5], pol[8],pol[6]}
+           Collections.addAll(ncycle, new Integer[]{pol[3], pol[1], pol[5], pol[8],pol[6]});
+           internal.put(pol[7], ncycle);
+           ncycle = new ArrayList<Integer>();
+           //pol[8] -> {pol[4],pol[6],pol[7],pol[5],pol[2]}
+           Collections.addAll(ncycle, new Integer[]{pol[4],pol[6],pol[7],pol[5],pol[2]});
+           internal.put(pol[8], ncycle);
+         }
+         else{
+           Integer j = (i+1)%innersubdiv1.length;
+           Integer km = (im+2)%innercentroiddiv.length;
+           Integer in = mapinnertoinner2[i];
+           Integer jn = (in+1)%innersubdiv2.length;
+           //write 3gon 
+           Integer[] pol = {0,0,0,0,0,0,0,0,0};
+           Integer[] pol2 = {0,0,0,0,0,0,0,0,0};
+           //write outer 8 polys for 4gon labeling
            
-            pol[0] = innersubdiv1[i];
-            pol[1] = innersubdiv1[j];
-            pol[2] = innersubdiv2[in];
-            pol[3] = innersubdiv2[jn];
-            pol[4] = innersubdivmidgon[i];
-            pol[5] = innersubdivmidgon[j];
-            pol[6] = innercentroiddiv[im];
-            pol[7] = innercentroiddiv[jm];
-            pol2[0] = pol[2];
-            pol2[1] = pol[0];
-            pol2[2] = pol[3];
-            pol2[3] = pol[1];
-            pol2[4] = pol[4];
-            pol2[5] = pol[5];
-            pol2[6] = pol[6];
-            pol2[7] = pol[7];
+           pol[0] = innersubdiv1[i];
+           pol[1] = innersubdiv1[j];
+           pol[2] = innersubdiv2[in];
+           pol[3] = innersubdiv2[jn];
+           pol[4] = innersubdivmidgon[i];
+           pol[5] = innersubdivmidgon[j];
+           pol[6] = innercentroiddiv[im];
+           pol[7] = innercentroiddiv[jm];
+           pol2[0] = pol[2];
+           pol2[1] = pol[0];
+           pol2[2] = pol[3];
+           pol2[3] = pol[1];
+           pol2[4] = pol[4];
+           pol2[5] = pol[5];
+           pol2[6] = pol[6];
+           pol2[7] = pol[7];
             
-            ArrayList<Integer> ncycle = new ArrayList<Integer>();
-            Collections.addAll(ncycle, pol2);
-            ncomplexfamily.add(ncycle);
-            internal.get(pol[2]).add(pol[6]);
-            ncycle = new ArrayList<Integer>();
-            Integer[] ncyclearr = {pol[2], pol[4], pol[7], pol[5], pol[3]};
-            Collections.addAll(ncycle, ncyclearr);
-            internal.put(pol[6],ncycle);
-            ncycle = new ArrayList<Integer>();
-            ncyclearr = new Integer[] {pol[0], pol[1], pol[5], pol[6], pol[4]};
-            Collections.addAll(ncycle, ncyclearr);
-            internal.put(pol[7], ncycle);
-            internal.get(pol[0]).add(pol[7]);
-            internal.get(pol[1]).add(0,pol[5]);
-            internal.get(pol[1]).add(0,pol[7]);
-            Collections.addAll(internal.get(pol[4]), new Integer[]{pol[6],pol[7]});
-            ncycle = new ArrayList<Integer>();
-            Collections.addAll(ncycle, new Integer[]{pol[3],pol[6],pol[7],pol[1]});
-            internal.put(pol[5],ncycle);
-            ncycle = new ArrayList<Integer>();
-            Collections.addAll(ncycle, new Integer[]{pol[2],pol[6],pol[5]});
-            internal.put(pol[3],ncycle);
-          }
+           ArrayList<Integer> ncycle = new ArrayList<Integer>();
+           Collections.addAll(ncycle, pol2);
+           ncomplexfamily.add(ncycle);
+           Collections.addAll(internal.get(pol[2]),new Integer[] {pol[6], pol[3]});
+           ncycle = new ArrayList<Integer>();
+           Integer[] ncyclearr = {pol[2], pol[4], pol[7], pol[5], pol[3]};
+           Collections.addAll(ncycle, ncyclearr);
+           internal.put(pol[6],ncycle);
+           ncycle = new ArrayList<Integer>();
+           ncyclearr = new Integer[] {pol[0], pol[1], pol[5], pol[6], pol[4]};
+           Collections.addAll(ncycle, ncyclearr);
+           internal.put(pol[7], ncycle);
+           internal.get(pol[0]).add(pol[7]);
+           internal.get(pol[1]).add(0,pol[5]);
+           internal.get(pol[1]).add(0,pol[7]);
+           Collections.addAll(internal.get(pol[4]), new Integer[]{pol[6],pol[7]});
+           ncycle = new ArrayList<Integer>();
+           Collections.addAll(ncycle, new Integer[]{pol[3],pol[6],pol[7],pol[1]});
+           internal.put(pol[5],ncycle);
+           ncycle = new ArrayList<Integer>();
+           Collections.addAll(ncycle, new Integer[]{pol[2],pol[6],pol[5]});
+           internal.put(pol[3],ncycle);
+         }
         }
-        ArrayList<Integer> ncycle = new ArrayList<Integer>();
-        Collections.addAll(ncycle, innersubdiv2);
-        ncycle.add(92);
-        ncomplexfamily.add(ncycle);
-        for (int i = 0; i < innersubdiv2.length; i++){
-          internal.get(innersubdiv2[i]).add(92);
-        }
+        //ArrayList<Integer> ncycle = new ArrayList<Integer>();
+        //Collections.addAll(ncycle, innersubdiv2);
+        //ncycle.add(92);  // 92 or 6
+        //ncomplexfamily.add(ncycle);
+        //for (int i = 0; i < innersubdiv2.length; i++){
+        //  internal.get(innersubdiv2[i]).add(92);
+        //}
       }
 
-      //maxlabel[0] += 1;
-      //newLabels.add(maxlabel[0]);
-      //ArrayList<Integer> cycle = new ArrayList<Integer>(ComplexFamily.get(i));
-      //internal.put(maxlabel[0], cycle);
-      //for (int j = 0; j < cycle.size(); j++){
-      //  ArrayList<Integer> ncycle = new ArrayList<Integer>();
-      //  ncycle.add(maxlabel[0]);
-      //  ncycle.add(cycle.get(j));
-      //  ncycle.add(cycle.get((j+1)%cycle.size()));
-      //  ncomplexfamily.add(ncycle);
-      //  Integer v = cycle.get(j);
-      //  if (internal.containsKey(v)){
-      //    Integer ni1 = j-1;
-      //    if (j == 0){
-      //       ni1 = cycle.size()-1;
-      //    }
-      //    Integer ni2 = (j+1)%cycle.size();
-      //    Integer nlabel1 = cycle.get(ni1);
-      //    Integer nlabel2 = cycle.get(ni2);
-      //    ArrayList<Integer> vpetal = internal.get(v);
-      //    //println(nlabel1);
-      //    //println(nlabel2);
-      //    //println(v);
-      //    //println(vpetal);
-      //    Integer vpind1 = vpetal.indexOf(nlabel1);
-      //    Integer vpind2 = vpetal.indexOf(nlabel2);
-      //    boolean t1 = vpind1 == 0 || vpind1 == (vpetal.size()-1);
-      //    boolean t2 = vpind2 == 0 || vpind2 == (vpetal.size()-1);
-      //    if (t1 && t2){
-      //      vpetal.add(maxlabel[0]);
-      //    }
-      //    else{
-      //      Integer insIndex = max(vpind1,vpind2);
-      //      vpetal.add(insIndex, maxlabel[0]);
-      //    }
-      //  }
-      //}
     }
     ComplexFamilyPacks.add(ncomplexfamily);
 }
@@ -870,11 +833,11 @@ void setup(){
   println(ivgraph);
   //internal.put(6, ivgraph);
   HashMap<Integer, Float> external = new HashMap<Integer,Float>();
-  external.put(1,Eradius);
-  external.put(2,Eradius);
-  external.put(3,Eradius);
-  external.put(4,Eradius);
-  external.put(5,Eradius);
+  //external.put(1,Eradius);
+  //external.put(2,Eradius);
+  //external.put(3,Eradius);
+  //external.put(4,Eradius);
+  //external.put(5,Eradius);
   ArrayList<ArrayList<Integer>> complexfamily = new ArrayList<ArrayList<Integer>>();
   ComplexFamily.add(ivgraph);
   Integer[] maxlabel = {6};
@@ -903,6 +866,7 @@ void setup(){
   //triangulateComplex(internal, maxlabel);
   //triangulateComplex(internal, maxlabel);
   println(internal);
+  println(external);
   circlePack(internal, external, out);
 }
 

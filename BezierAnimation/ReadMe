@@ -29,9 +29,17 @@ But our output is written in the format:
 
 So you'll need to change this.  You'll need to use your favorite text editor and copy and paste 
 for each data set in the form [(x.x,x.x,x.x), (x.x,x.x,x.x),...]
-this into the text editor (new file).  
+this into the text editor (new file).  You'll copy the data for each
+data set which is given in the Blender Console (just toggle it visible
+and scroll as necessary with the given data lines shown in view).
+In your console you should see something like: 
+....
+[(x.x,x.x,x.x), (x.x,x.x,x.x),...]
+[(x.x,x.x,x.x), (x.x,x.x,x.x),...]
+[(x.x,x.x,x.x), (x.x,x.x,x.x),...]  
+....
 
-Paste the data sets and use a 'find and replace' function that should
+Paste the data sets into your text editor program and use a 'find and replace' function that should
 exist for your text editor and search the string "("
 and for the replacement string input "new PVector(" 
 
@@ -46,10 +54,16 @@ are for the PVector[] points, PVector[] lpoints, and PVector[] rpoints
 respectively.
 
 so you'll need to copy each data set (after modifications given above)
-and paste these after the "=" of each of PVector[] points, PVector[] lpoints, and PVector[] rpoints in the associated bezier processing(language) script that I've written called 'Bezier Animation.pde'
+and paste these after the "=" of each of PVector[] points, PVector[] lpoints, and PVector[] rpoints in the associated bezier processing(language) script that I've written called 'BezierAnimation.pde'
 
 Make sure that each of these lines ends with a ";" as stated with 
 given form that I've indicated post modifications.
+
+So the appropriate lines of 'BezierAnimation.pde' should look like:
+
+PVector[] points = {new PVector(x.x,x.x,x.x), new PVector(x.x,x.x,x.x),...};
+PVector[] lpoints = {new PVector(x.x,x.x,x.x), new PVector(x.x,x.x,x.x),...};
+PVector[] rpoints = {new PVector(x.x,x.x,x.x), new PVector(x.x,x.x,x.x),...};
 
 Then run the processing script in your processing IDE environment.
 

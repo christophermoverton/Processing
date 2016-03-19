@@ -119,7 +119,6 @@ void draw(){
   beginShape();
   int k = 0;
   while(k < (curvelen)){
-    println(k);
     curveVertex(curvepoints.get(astepi).x, curvepoints.get(astepi).y);
     astepi += 1;
     k += 1;

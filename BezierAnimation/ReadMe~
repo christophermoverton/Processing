@@ -46,7 +46,7 @@ are for the PVector[] points, PVector[] lpoints, and PVector[] rpoints
 respectively.
 
 so you'll need to copy each data set (after modifications given above)
-and paste these after the "=" of each of PVector[] points, PVector[] lpoints, and PVector[] rpoints in the associated bezier processing(language) script that I've written called 'Bezier Animation.pde'
+and paste these after the "=" of each of PVector[] points, PVector[] lpoints, and PVector[] rpoints
 
 Make sure that each of these lines ends with a ";" as stated with 
 given form that I've indicated post modifications.

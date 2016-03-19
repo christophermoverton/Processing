@@ -65,7 +65,6 @@ PVector[] points = {new PVector(x.x,x.x,x.x), new PVector(x.x,x.x,x.x),...};
 PVector[] lpoints = {new PVector(x.x,x.x,x.x), new PVector(x.x,x.x,x.x),...};
 PVector[] rpoints = {new PVector(x.x,x.x,x.x), new PVector(x.x,x.x,x.x),...};
 
-You can also watch my tutorial at 
 Then run the processing script in your processing IDE environment.
 
 

@@ -20,13 +20,35 @@ void CubicBezier(float t, PVector P1, PVector P2, PVector P3, PVector P4, PVecto
   out.y = nP1.y;
 }
 
-float tstep = .0001;  //should be 0<tstep< 1
+float tstep = .1;  //should be 0<tstep< 1
 int curvelen = 1000;//in point steps;
 boolean showTrack = false;
 
 ArrayList<PVector> curvepoints = new ArrayList<PVector>();
 void setup(){
   size(1080,720);
+  background(255);
+  smooth(8);
+  Table table = loadTable("bezierpoints.csv","header");
+  points = new PVector[table.getRowCount()];
+  lpoints = new PVector[table.getRowCount()];
+  rpoints = new PVector[table.getRowCount()];
+  int h = 0;
+  for (TableRow row : table.rows()) {
+    float x = row.getFloat("x");
+    float y = row.getFloat("y");
+    float z = row.getFloat("z");
+    float lpx = row.getFloat("cplx");
+    float lpy = row.getFloat("cply");
+    float lpz = row.getFloat("cplz");
+    float rpx = row.getFloat("cprx");
+    float rpy = row.getFloat("cpry");
+    float rpz = row.getFloat("cprz");
+    points[h] = new PVector(x,y,z);
+    lpoints[h] = new PVector(lpx,lpy,lpz);
+    rpoints[h] = new PVector(rpx,rpy,rpz);
+    h += 1;
+  }
   int steps = (int)(1/tstep);
   for(int i = 1; i < points.length; i++){
     int j = (i-1)%points.length;
@@ -59,14 +81,16 @@ void setup(){
   
 }
 int astep = 0;
+int astep2 = 0;
 void draw(){
-  fill(255,2);
+  fill(255,70);
   rect(0,0, 1920,1080);
   if (astep > (curvepoints.size()-curvelen-1)){
     astep = 0;
     println("hit");
   }
   translate(1080.0/2.0, 720.0/2.0);
+  rotate(.1*pow(astep2, .5));
   scale(3.0);
   strokeWeight(.01);
   stroke(120,40);
@@ -97,7 +121,7 @@ void draw(){
   }
   int astepi = astep;
   stroke(0);
-  strokeWeight(.2);
+  strokeWeight(1);
   beginShape();
   int k = 0;
   while(k < (curvelen)){
@@ -107,6 +131,7 @@ void draw(){
   }
   endShape();
 
-  astep += 1000;
+  astep += 8;
+  astep2 += 1000;
 
 }

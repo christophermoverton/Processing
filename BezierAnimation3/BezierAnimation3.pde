@@ -40,7 +40,7 @@ void CubicBezier(float t, PVector P1, PVector P2, PVector P3, PVector P4, PVecto
 }
 
 float tstep = .1;  //should be 0<tstep< 1
-int curvelen = 1000;//in point steps;
+int curvelen = 10;//in point steps;
 boolean showTrack = false;
 boolean showTrack2 = true;
 boolean multiCurve = true;
@@ -48,6 +48,7 @@ int maxFrames = 0;
 HashMap<Integer,HashMap<Integer,PVector[]>> curvetoframepoints;
 HashMap<Integer,HashMap<Integer,PVector[]>> curvetoframelpoints;
 HashMap<Integer,HashMap<Integer,PVector[]>> curvetoframerpoints;
+HashMap<Integer,HashMap<Integer, ArrayList<PVector>>> cfpoints;
 
 ArrayList<PVector> curvepoints = new ArrayList<PVector>();
 void setup(){
@@ -185,7 +186,7 @@ void setup(){
       }
     }
   }
-  HashMap<Integer,HashMap<Integer, ArrayList<PVector>>> cfpoints = new HashMap<Integer,HashMap<Integer, ArrayList<PVector>>>();
+  cfpoints = new HashMap<Integer,HashMap<Integer, ArrayList<PVector>>>();
   int steps = (int)(1/tstep);
   for (Map.Entry<Integer,HashMap<Integer,PVector[]>> me : curvetoframepoints.entrySet()){
     Integer curveID = me.getKey();
@@ -323,6 +324,7 @@ void draw(){
         PVector[] mappoints = curvetoframepoints.get(curveID).get(frameID);
         PVector[] maplpoints = curvetoframelpoints.get(curveID).get(frameID);
         PVector[] maprpoints = curvetoframerpoints.get(curveID).get(frameID);
+        print(mappoints);
         beginShape();
         vertex(mappoints[0].x,mappoints[0].y);
         for(int i = 1; i < mappoints.length; i++){
@@ -350,10 +352,23 @@ void draw(){
   }
   int astepi = astep;
   stroke(0);
-  strokeWeight(1);
+  strokeWeight(.1);
   beginShape();
   if (multiCurve){
-    
+    Integer frameID = ((int) astep3)%maxFrames + 1;
+    for (Map.Entry<Integer,HashMap<Integer,ArrayList<PVector>>> me : cfpoints.entrySet()){
+      Integer curveID = me.getKey();
+      Integer cfsize = cfpoints.get(curveID).get(frameID).size();
+      Integer poskey = astepi%cfsize;
+      int k = 0;
+      while(k < (curvelen)){
+        curveVertex(cfpoints.get(curveID).get(frameID).get(poskey).x, 
+                    cfpoints.get(curveID).get(frameID).get(poskey).y);
+        astepi += 1.0;
+        k += 1;
+      }
+      endShape();   
+    }
   }
   else{
     int k = 0;
@@ -364,8 +379,8 @@ void draw(){
     }
     endShape();
   }
-  astep += 8;
+  astep += 1.0;
   astep2 += 1000;
-  astep3 += 1;
+  astep3 += 2;
 
 }

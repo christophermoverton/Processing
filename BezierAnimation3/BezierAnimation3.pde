@@ -39,7 +39,7 @@ void CubicBezier(float t, PVector P1, PVector P2, PVector P3, PVector P4, PVecto
   out.y = nP1.y;
 }
 
-float tstep = .1;  //should be 0<tstep< 1
+float tstep = .01;  //should be 0<tstep< 1
 int curvelen = 10;//in point steps;
 boolean showTrack = false;
 boolean showTrack2 = true;
@@ -270,7 +270,7 @@ void setup(){
   //println(curvepoints.size());
   println(curvetoframepoints);
 }
-int astep = 0;
+float astep = 0;
 int astep2 = 0;
 float astep3 = 0;
 
@@ -350,37 +350,37 @@ void draw(){
       //}
     }
   }
-  int astepi = astep;
+  float astepi = astep;
   stroke(0);
-  strokeWeight(.1);
+  strokeWeight(.01);
   beginShape();
   if (multiCurve){
     Integer frameID = ((int) astep3)%maxFrames + 1;
     for (Map.Entry<Integer,HashMap<Integer,ArrayList<PVector>>> me : cfpoints.entrySet()){
       Integer curveID = me.getKey();
       Integer cfsize = cfpoints.get(curveID).get(frameID).size();
-      Integer poskey = astepi%cfsize;
       int k = 0;
       while(k < (curvelen)){
+        Integer poskey = ((int)astepi)%cfsize;
         curveVertex(cfpoints.get(curveID).get(frameID).get(poskey).x, 
                     cfpoints.get(curveID).get(frameID).get(poskey).y);
-        astepi += 1.0;
+        astepi += .5;
         k += 1;
       }
       endShape();   
     }
   }
   else{
-    int k = 0;
-    while(k < (curvelen)){
-      curveVertex(curvepoints.get(astepi).x, curvepoints.get(astepi).y);
-      astepi += 1;
-      k += 1;
-    }
-    endShape();
+    //int k = 0;
+    //while(k < (curvelen)){
+    //  curveVertex(curvepoints.get(astepi).x, curvepoints.get(astepi).y);
+    //  astepi += 1;
+    //  k += 1;
+    //}
+    //endShape();
   }
-  astep += 1.0;
+  astep += .5;
   astep2 += 1000;
-  astep3 += 2;
+  astep3 += 1;
 
 }

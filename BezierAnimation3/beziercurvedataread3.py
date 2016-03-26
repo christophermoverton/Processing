@@ -7,13 +7,20 @@ Scene_Name = bpy.context.scene.name
 ##obj_list = ["CurveObj", "CurveObj2", "CurveObj3", "CurveObj4","CurveObj5"]
 obj_list = ["CurveObj"]
 hook_list = ["hook1", "hook2", "hook3", "hook4", "hook5"]
+for i, obj in enumerate(obj_list):
+    ob_curve = bpy.data.objects[obj]
+    cu = ob_curve.data
+    for spline in cu.splines:
+        modnames = ['hook.'+str(k).zfill(3) for k in range(len(spline.bezier_points))]
+        lmodnames = ['lhook.'+str(k).zfill(3) for k in range(len(spline.bezier_points))]
+        rmodnames = ['rhook.'+str(k).zfill(3) for k in range(len(spline.bezier_points))] 
 ##ob_curve = bpy.data.objects["CurveObj3"]
 ##cu = ob_curve.data
 points_animation = []
 points = {}
 lpoints = {}
 rpoints = {}
-for frame in range(1, 120):
+for frame in range(1, 217):
     bpy.data.scenes[Scene_Name].frame_set(frame)
     for i, obj in enumerate(obj_list):
         ob_curve = bpy.data.objects[obj]
@@ -21,19 +28,22 @@ for frame in range(1, 120):
         for spline in cu.splines:
             maxPts = len(spline.bezier_points)
             for j,point in enumerate(spline.bezier_points):
-                ob_hook = bpy.data.objects[hook_list[j]]
-                points[len(points)] = {'pos': tuple(ob_hook.location.co), 
+                ob_hook = bpy.data.objects[modnames[j]]
+                ob_hook2 = bpy.data.objects[lmodnames[j]]
+                ob_hook3 = bpy.data.objects[rmodnames[j]]
+                print(j)
+                points[len(points)] = {'pos': tuple(ob_hook.location), 
                                         'curveID': i, 'frameID': frame,
                                         'pointID': j, 'maxPts': maxPts}
-                lpoints[len(lpoints)] = {'pos':tuple(point.handle_left),
+                lpoints[len(lpoints)] = {'pos':tuple(ob_hook2.location),
                                         'curveID': i, 'frameID': frame,
                                         'pointID': j}
-                rpoints[len(rpoints)] = {'pos':tuple(point.handle_right),
+                rpoints[len(rpoints)] = {'pos':tuple(ob_hook3.location),
                                         'curveID': i, 'frameID': frame,
                                          'pointID': j}
-print(points)
-print(lpoints)
-print(rpoints)
+##print(points)
+##print(lpoints)
+##print(rpoints)
 print(bpy.context.space_data.text.filepath)
 filepath = bpy.context.space_data.text.filepath.split('beziercurvedataread2.py')[0]
 print(filepath)

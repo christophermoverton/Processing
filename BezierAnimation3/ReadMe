@@ -1,9 +1,14 @@
 Read me on Blender for Bezier Curve Editor for Processing (language):
 
-You'll want to use the associated beziercurvedataread2.py script
+You'll want to use the associated beziercurvedatareader3.py script
 in Blender.  Select the associated Bezier Curve which should be named
-"BezierCurve" or modify the script for your associated name on line
+"CurveObj" or modify the script for your associated name on line
 3 of the script.
 
 Technically at the moment it is designed in reading 5 curve objects and then sequentially, though you can modify at a given line the reading of curve objects as necessary.  Just run blender script which outputs to a CSV file curve data.  Then run the processing script which will read the csv file.  No need to transfer curve data between the two programs.
+
+Please see my tutorial on Youtube at: 
+https://youtu.be/B9A1BpI08xM
+
+I provide an indepth discussion of using the associated scripts found in this file at the Youtube link above.
 

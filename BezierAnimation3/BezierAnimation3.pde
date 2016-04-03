@@ -39,7 +39,7 @@ void CubicBezier(float t, PVector P1, PVector P2, PVector P3, PVector P4, PVecto
   out.y = nP1.y;
 }
 
-float tstep = .01;  //should be 0<tstep< 1
+float tstep = .001;  //should be 0<tstep< 1
 int curvelen = 10;//in point steps;
 boolean showTrack = false;
 boolean showTrack2 = true;
@@ -275,7 +275,7 @@ int astep2 = 0;
 float astep3 = 0;
 
 void draw(){
-  fill(255,70);
+  fill(255,0);
   rect(0,0, 1920,1080);
   if (astep > (curvepoints.size()-curvelen-1)){
     astep = 0;
@@ -379,7 +379,7 @@ void draw(){
     //}
     //endShape();
   }
-  astep += .5;
+  astep += 100.0;
   astep2 += 1000;
   astep3 += 1;
 

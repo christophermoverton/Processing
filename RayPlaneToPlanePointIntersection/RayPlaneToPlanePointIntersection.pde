@@ -1,3 +1,4 @@
+import java.util.Map;
 class Quaternion {
   float W,X,Y,Z;
   Quaternion(float w, float x, float y, float z){
@@ -119,6 +120,61 @@ class rayTest{
   ArrayList<Boolean> intersection;
   ArrayList<Float> rayscalarincs;
   ArrayList<Float> lastDistances;
+  ArrayList<PVector> intersectionpoints;
+  ArrayList<Boolean> stopTest;
+  ArrayList<PVector> currentPoints;
+  PVector startPoint;
+  rayTest(int num){
+    rayscalars = new ArrayList<Float>();
+    intersection = new ArrayList<Boolean>();
+    rayscalarincs = new ArrayList<Float>();
+    lastDistances = new ArrayList<Float>();
+    intersectionpoints = new ArrayList<PVector>();
+    stopTest = new ArrayList<Boolean>();
+    currentPoints = new ArrayList<PVector>();
+    startPoint = new PVector(0.0,0.0,0.0);
+    for (int i = 0; i < num; i++){
+      rayscalars.add(0.0);
+      intersection.add(false);
+      rayscalarincs.add(.5);
+      lastDistances.add(9.0e10);
+      intersectionpoints.add(new PVector(0.0,0.0,0.0));
+      currentPoints.add(new PVector(0.0,0.0,0.0));
+      stopTest.add(false);
+      
+    }
+  }
+}
+
+class irayTest{
+  Float rayscalar;
+  Boolean intersection;
+  Float rayscalarinc;
+  Float lastDistance;
+  PVector intersectionpoint;
+  Boolean stopTest;
+  PVector currentPoint;
+  PVector startPoint;
+  irayTest(){
+    rayscalar = 0.0;
+    intersection = false;
+    rayscalarinc = 2.0;
+    lastDistance = 1.0e10;
+    intersectionpoint = new PVector(0.0,0.0,0.0);
+    stopTest = false;
+    currentPoint = new PVector(0.0,0.0,0.0);
+    startPoint = new PVector(0.0,0.0,0.0);
+  }
+  irayTest(Float Rayscalar){
+    rayscalar = Rayscalar;
+    intersection = false;
+    rayscalarinc = 1.1;
+    lastDistance = 1.0e10;
+    intersectionpoint = new PVector(0.0,0.0,0.0);
+    stopTest = false;
+    currentPoint = new PVector(0.0,0.0,0.0);
+    startPoint = new PVector(0.0,0.0,0.0);
+  }
 }
 
 ArrayList<PVector> generateRays(Disk disk){
@@ -130,43 +186,219 @@ ArrayList<PVector> generateRays(Disk disk){
     p1toCorigin.normalize();
     ArrayList<PVector> rays = new ArrayList<PVector>();
     rays.add(p1toCorigin);
-    float theta = PI/2.0;
-    for (int i = 0; i < 3; i++){
+    float theta = PI/3.0;
+    for (int i = 0; i < 6; i++){
       PVector point = Qrotate(p1toCorigin, ncorigin, theta);
       rays.add(point);
-      theta += PI/2.0;
+      theta += PI/3.0;
     }
     return rays;
 }
 
 Float PointToPlaneDist(Disk disk, PVector ray){
+    PVector rayc = new PVector(ray.x, ray.y, ray.z);
     PVector corigin = sphericalToC(disk.origin);
     PVector pt1 = sphericalToC(disk.dpoint);
     //PVector p1toCorigin = pt1.sub(corigin);
     PVector ncorigin = new PVector(corigin.x,corigin.y,corigin.z);
     ncorigin.normalize();
-    PVector raytopt1 = ray.sub(pt1);
+    PVector raytopt1 = rayc.sub(pt1);
+    Float d = raytopt1.dot(ncorigin);
+    //ncorigin.mult(d);
+    //ray.add(ncorigin);
     return raytopt1.dot(ncorigin);
 }
 
-ArrayList<PVector> rayTester(Disk disk,  Disk disk2, 
-                             ArrayList<PVector> rays, rayTest raytest){
-  int i = 0;
-  for (PVector ray: rays){
-    ArrayList<Float> rayscalars = raytest.rayscalars;
-    ArrayList<Float> rayscalarincs = raytest.rayscalarincs;
-    Float rayscalar = rayscalars.get(i);
-    Float rayscalarinc = rayscalarincs.get(i);
+Float PlaneAndLineIntersection(Disk disk, PVector ray, PVector rayOrigin){
+  //returns u parameter (scalar) distance 
+  PVector rayc = new PVector(ray.x, ray.y, ray.z);
+  PVector corigin = sphericalToC(disk.origin);
+  PVector pt1 = sphericalToC(disk.dpoint);
+  pt1 = new PVector(pt1.x,pt1.y,pt1.z);
+    //PVector p1toCorigin = pt1.sub(corigin);
+  PVector ncorigin = new PVector(corigin.x,corigin.y,corigin.z);
+  ncorigin.normalize();
+  return (ncorigin.dot(pt1.sub(rayOrigin)))/(ncorigin.dot(rayc));
+}
+
+void findIntersection(Disk disk, Disk disk2, PVector ray, irayTest iraytest){
+  int bcond = 0;
+  Boolean bcondc = bcond < 100000; 
+  Float d = 1.0e14;
+  Float lastDistance = d;
+  PVector corigin = sphericalToC(disk.origin);
+  int rcount = 0;
+  while ((abs(d) > tolerance ) && (bcondc)){
+    Float rayscalar = iraytest.rayscalar;
+    Float rayscalarinc = iraytest.rayscalarinc;
+    //Float rayscalar = rayscalars.get(i);
+    //Float rayscalarinc = rayscalarincs.get(i);
     rayscalar += rayscalarinc;
-    PVector cray = ray.mult(rayscalar);
-    Float dist = PointToPlaneDist(disk2, cray);
-    if 
-    i += 1;
+    PVector rayc = new PVector(ray.x, ray.y, ray.z);
+    rayc.mult(rayscalar);
+    rayc.add(corigin);
+    d = PointToPlaneDist(disk2, rayc);
+    if (bcond == 0){
+      lastDistance = abs(d);
+    }
+    Boolean t1 = lastDistance < 0;
+    Boolean t2 = d < 0;
+    //if ((t1 && t2)||(!t1 && !t2)){
+    if (abs(d) <= lastDistance){
+      lastDistance = abs(d);
+      iraytest.rayscalar = rayscalar;
+    }
+    else{
+      if (rayscalarinc > 1.0){
+        //println("hit");
+        iraytest.rayscalarinc = 1.0/rayscalarinc;
+      }
+      iraytest.rayscalarinc = pow(rayscalarinc, 2);
+      if (rcount > 10){
+        iraytest.stopTest = true;
+        println("hit");
+        break;
+      }
+      else{
+        rcount += 1;
+      }
+    }
+    println(rcount);
+    iraytest.currentPoint.x = rayc.x;
+    iraytest.currentPoint.y = rayc.y;
+    iraytest.currentPoint.z = rayc.z;
+    bcond += 1;
+    bcondc = bcond < 10;
+    if (d < tolerance){
+      println("hit d less than tolerance");
+    }
   }
+  iraytest.intersectionpoint.x = iraytest.currentPoint.x;
+  iraytest.intersectionpoint.y = iraytest.currentPoint.y;
+  iraytest.intersectionpoint.z = iraytest.currentPoint.z;
+}
+
+void findIntersection(Disk disk2, PVector ray, irayTest iraytest){
+   float u = PlaneAndLineIntersection(disk2, ray, iraytest.startPoint);
+   PVector rayc = new PVector(ray.x,ray.y,ray.z);
+   PVector ip = rayc.mult(u);
+   ip.add(iraytest.startPoint);
+   iraytest.intersectionpoint = new PVector(ip.x,ip.y,ip.z);
+}
+
+void stopRayInitialization(Disk disk, Disk disk2, ArrayList<PVector> rays, 
+                           rayTest raytest){
+  int i = 0;
+  PVector corigin = sphericalToC(disk.origin);
+  raytest.startPoint.x = corigin.x;
+  raytest.startPoint.y = corigin.y;
+  raytest.startPoint.z = corigin.z;
+  for (PVector ray: rays){
+    
+      ArrayList<Float> rayscalars = raytest.rayscalars;
+      ArrayList<Float> rayscalarincs = raytest.rayscalarincs;
+      Float rayscalar = rayscalars.get(i);
+      Float rayscalarinc = rayscalarincs.get(i);
+      rayscalar += rayscalarinc;
+      PVector rayc = new PVector(ray.x, ray.y, ray.z);
+      rayc.mult(rayscalar);
+      rayc.add(corigin);
+      Float dist = PointToPlaneDist(disk2, rayc);
+      irayTest iraytest = new irayTest(rayscalar);
+      iraytest.startPoint.x = raytest.startPoint.x;
+      iraytest.startPoint.y = raytest.startPoint.y;
+      iraytest.startPoint.z = raytest.startPoint.z;
+      //if (dist < tolerance){
+      //  raytest.intersection.set(i, true);
+      //  raytest.intersectionpoints.set(i, cray);
+      //  break;
+      //}
+      //else{
+        //rayscalar += dist;
+        //cray = ray.mult(rayscalar);
+        //cray = cray.add(corigin);
+        //raytest.intersectionpoints.set(i,rayc);
+        if (abs(dist) < 500.0){
+          raytest.lastDistances.set(i,abs(dist));
+          //findIntersection(disk, disk2, ray, iraytest);
+          findIntersection(disk2, ray, iraytest);
+          if (iraytest.stopTest){
+            raytest.lastDistances.set(i,1.0e7);
+            raytest.intersectionpoints.set(i, corigin);
+            raytest.stopTest.set(i,true);           
+          }
+          else{
+            raytest.intersectionpoints.set(i, iraytest.intersectionpoint);
+          }
+        }
+        else{
+          raytest.lastDistances.set(i,1.0e7);
+          raytest.intersectionpoints.set(i, corigin);
+          raytest.stopTest.set(i,true);
+        }
+        int j = 0;
+        //ArrayList<Boolean> dtest = new ArrayList<Boolean>();
+        float dist2 = dist;
+        float rayscalar2 = rayscalar;
+        //while (j < 10){
+        //  rayc = new PVector(ray.x, ray.y, ray.z);
+        //  rayscalarinc = pow(rayscalarinc, .5);
+        //  rayscalar = rayscalars.get(i);
+        //  rayscalar += rayscalarinc;
+        //  rayc.mult(rayscalar);
+        //  rayc.add(corigin);
+        //  dist = PointToPlaneDist(disk2, rayc);
+        //  if (dist > raytest.lastDistances.get(i)){
+        //    raytest.stopTest.set(i,true);
+        //    raytest.intersectionpoints.set(i, corigin);
+        //    break;
+        //  }
+        //  j+=1;
+        //}
+        raytest.rayscalarincs.set(i,1.0);
+      
+      i += 1;
+    
+  } 
+}
+
+void rayTester(Disk disk, Disk disk2, 
+               ArrayList<PVector> rays, rayTest raytest){
+  int i = 0;
+  PVector corigin = sphericalToC(disk.origin);
+  for (PVector ray: rays){
+    if(!raytest.stopTest.get(i)){
+      PVector rayc = new PVector(ray.x, ray.y, ray.z);
+      ArrayList<Float> rayscalars = raytest.rayscalars;
+      ArrayList<Float> rayscalarincs = raytest.rayscalarincs;
+      Float rayscalar = rayscalars.get(i);
+      Float rayscalarinc = rayscalarincs.get(i);
+      rayscalar += rayscalarinc;
+      PVector cray = rayc.mult(rayscalar);
+      cray = cray.add(corigin);
+      Float dist = PointToPlaneDist(disk2, cray);
+      if (abs(dist) > raytest.lastDistances.get(i)){
+        raytest.stopTest.set(i,true);
+      }
+      else{
+        raytest.lastDistances.set(i, abs(dist));
+        raytest.rayscalars.set(i,rayscalar);
+        raytest.currentPoints.set(i, cray);
+        
+      }
+      i += 1;
+    }
+  }
+}
+
+void planePlaneIntersection(){
 }
 
 ArrayList<Disk> disks = new ArrayList<Disk>();
 ArrayList<ArrayList<PVector>> diskspoints = new ArrayList<ArrayList<PVector>>();
+ArrayList<ArrayList<PVector>> diskRays = new ArrayList<ArrayList<PVector>>();
+ArrayList<HashMap<Integer, rayTest>> diskRayTestMaps = new ArrayList<HashMap<Integer, rayTest>>();
+//ArrayList<rayTest> diskRayTest = new ArrayList<rayTest>();
 
 float phidiv = 3;
 float thetadiv = 3;
@@ -174,6 +406,7 @@ float thetadiv2 = 30.0;
 float deltaphi = PI/3.0;
 float sphereRad = 200.0;
 float tolerance = 1.0e-8;
+float sInvert = 1.8;
 void setup(){
   PVector zvec = new PVector(0.0,0.0,1.0);
   PVector xvec = new PVector(1.0,0.0,0.0);
@@ -216,26 +449,47 @@ void setup(){
       //println(point);
     }
     diskspoints.add(diskpoints);
+    ArrayList<PVector> rays = generateRays(disk);
+    diskRays.add(rays);
+    int j = 0;
+    HashMap<Integer, rayTest> diskraytestmap = new HashMap<Integer, rayTest>();
+    for (Disk disk2: disks){
+      if (disk == disk2){
+        
+        continue;
+      }
+      rayTest raytests = new rayTest(rays.size());
+      stopRayInitialization(disk, disk2, rays, raytests);
+      println(raytests.stopTest);
+      diskraytestmap.put(j,raytests);
+      j += 1;
+    }
+    diskRayTestMaps.add(diskraytestmap);
   }
+  
   size(1920,1080, P3D);
   background(0);
   lights();
 }
 
-float t = 0.0;
+float t = 0.02;
+float tinc = .007;
 boolean DrawSphere = false;
+boolean DrawDisks = true;
+boolean Diskfill = false;
 void draw(){
   fill(0,80);
   noStroke();
   beginShape();
-  vertex(0,0,-200);
-  vertex(1920,0, -200);
-  vertex(1920,1080,-200);
-  vertex(0,1080,-200);
+  vertex(-5000,-3000,-200);
+  vertex(5000,-3000, -200);
+  vertex(5000,3000,-200);
+  vertex(-5000,3000,-200);
   endShape();
   //rect(0,0, 1920,1080);
   translate(1920/2, 1080/2, 0);
   rotateY(t);
+  //scale(t);
   noFill();
   stroke(200);
   strokeWeight(.3);
@@ -244,16 +498,61 @@ void draw(){
     sphere(200);
   }
   int fillc = 0;
-  for (ArrayList<PVector> diskpoints: diskspoints){
-    fill(fillc%255,60);
-    beginShape();
-    
-    for (PVector point: diskpoints){
-      vertex(point.x,point.y,point.z);
-      //println(point);
+  if (DrawDisks){
+    for (ArrayList<PVector> diskpoints: diskspoints){
+      if (Diskfill){
+        fill(fillc%255,2);
+      }
+      else{
+        noFill();
+      }
+      beginShape();
+      
+      for (PVector point: diskpoints){
+        vertex(point.x,point.y,point.z);
+        //println(point);
+      }
+      endShape();
+      fillc += 10;
     }
-    endShape();
-    fillc += 10;
   }
-  t += .007;
+  int i = 0;
+  stroke(255);
+  strokeWeight(1.0);
+  for(HashMap<Integer, rayTest> diskRayTestMap: diskRayTestMaps){
+    for(Map.Entry<Integer, rayTest> me: diskRayTestMap.entrySet()){
+      Integer j = me.getKey();
+      rayTest raytest = me.getValue();
+      rayTester(disks.get(i), disks.get(j), diskRays.get(i), raytest);
+      int k = 0;
+      for (Boolean stopt : raytest.stopTest){
+        PVector sp = raytest.startPoint;
+        if (stopt){
+          
+          PVector ep = raytest.intersectionpoints.get(k);
+          if (ep.x != sp.x && ep.y != sp.y){
+            line(sp.x,sp.y,sp.z, ep.x,ep.y,ep.z);
+              textSize(5);
+              text("Ray "+ String.valueOf(i)+ " "+ j.toString()+ " "+ String.valueOf(k),
+                  ep.x,ep.y,ep.z);
+                  fill(255);
+          }
+        }
+        else{
+          PVector ep = raytest.currentPoints.get(k);
+          line(sp.x,sp.y,sp.z, ep.x,ep.y,ep.z);
+        }
+        k += 1;
+      }
+    }
+    i+= 1;
+  }
+  t += tinc;
+  //println(t);
+  if (t > 3){
+    tinc = -tinc;
+  }
+  if (t < .01){
+    tinc = -tinc;
+  }
 }

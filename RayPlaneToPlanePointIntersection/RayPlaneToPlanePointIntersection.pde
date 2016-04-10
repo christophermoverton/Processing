@@ -123,6 +123,11 @@ class rayTest{
   ArrayList<PVector> intersectionpoints;
   ArrayList<Boolean> stopTest;
   ArrayList<PVector> currentPoints;
+  ArrayList<line> PtoPs;
+  ArrayList<DiskLineTest> dltests;
+  ArrayList<line> intersectSegments; //results from positive line test for disk to plane
+  //to plane intersections.
+  
   PVector startPoint;
   rayTest(int num){
     rayscalars = new ArrayList<Float>();
@@ -132,6 +137,9 @@ class rayTest{
     intersectionpoints = new ArrayList<PVector>();
     stopTest = new ArrayList<Boolean>();
     currentPoints = new ArrayList<PVector>();
+    PtoPs = new ArrayList<line>();
+    dltests = new ArrayList<DiskLineTest>();
+    intersectSegments = new ArrayList<line>();
     startPoint = new PVector(0.0,0.0,0.0);
     for (int i = 0; i < num; i++){
       rayscalars.add(0.0);
@@ -141,7 +149,8 @@ class rayTest{
       intersectionpoints.add(new PVector(0.0,0.0,0.0));
       currentPoints.add(new PVector(0.0,0.0,0.0));
       stopTest.add(false);
-      
+      PtoPs.add(new line());
+      dltests.add(new DiskLineTest());
     }
   }
 }
@@ -155,6 +164,7 @@ class irayTest{
   Boolean stopTest;
   PVector currentPoint;
   PVector startPoint;
+  line PtoP;
   irayTest(){
     rayscalar = 0.0;
     intersection = false;
@@ -164,6 +174,7 @@ class irayTest{
     stopTest = false;
     currentPoint = new PVector(0.0,0.0,0.0);
     startPoint = new PVector(0.0,0.0,0.0);
+    PtoP = new line();
   }
   irayTest(Float Rayscalar){
     rayscalar = Rayscalar;
@@ -174,6 +185,76 @@ class irayTest{
     stopTest = false;
     currentPoint = new PVector(0.0,0.0,0.0);
     startPoint = new PVector(0.0,0.0,0.0);
+    PtoP = new line();
+  }
+}
+
+class line{
+  PVector p1;
+  PVector p2;
+  line(){
+    p1 = new PVector(0.0,0.0,0.0);
+    p2 = new PVector(0.0,0.0,0.0); 
+  }
+  line(PVector P1, PVector P2){
+    p1 = new PVector(P1.x, P1.y, P1.z);
+    p2 = new PVector(P2.x, P2.y, P2.z);
+  }
+}
+
+class DiskLineTest{
+  Disk disk;
+  line l;  //should have associated SPRcoord for both points on the line
+  SPRcoord sprcoord1;
+  SPRcoord sprcoord2;
+  int intersect;
+  line intersectsegment;
+  DiskLineTest(){
+    disk = new Disk();
+    l = new line();
+    intersect = 0;
+    intersectsegment = new line();
+    
+  }
+  DiskLineTest(Disk idisk, line il, SPRcoord Sprcoord1, SPRcoord Sprcoord2){
+    disk = idisk;
+    l = il;
+    sprcoord1 = Sprcoord1;
+    sprcoord2 = Sprcoord2;
+  }
+}
+
+class DiskDiskTest{
+  Disk disk1;
+  Disk disk2;
+  line iseg1;
+  line iseg2;
+  int intersect;
+  line intersectsegment;
+  DiskDiskTest(Disk Disk1, Disk Disk2, line Iseg1, line Iseg2){
+    disk1 = Disk1;
+    disk2 = Disk2;
+    iseg1 = Iseg1;
+    iseg2 = Iseg2;
+    intersect = 0;
+    intersectsegment = new line();
+  }
+}
+
+class SPRcoord{
+  //spherical rotated coordinate in double prime coordinate system
+  PVector pt;
+  PVector byprime;  //yprime basis
+  PVector spcoord;  // rotation angles
+  SPRcoord(){
+    pt = new PVector(0.0,0.0,0.0);
+    byprime = new PVector(0.0,0.0,0.0);
+    spcoord = new PVector(0.0,0.0,0.0);
+  }
+  SPRcoord(PVector Pt, PVector Byprime, PVector Spcoord){
+    pt = new PVector(Pt.x, Pt.y, Pt.z);
+    byprime = new PVector(Byprime.x, Byprime.y, Byprime.z);
+    spcoord = new PVector(Spcoord.x, Spcoord.y, Spcoord.z);
   }
 }
 
@@ -329,6 +410,21 @@ void stopRayInitialization(Disk disk, Disk disk2, ArrayList<PVector> rays,
           }
           else{
             raytest.intersectionpoints.set(i, iraytest.intersectionpoint);
+            planePlaneIntersection(disk, disk2, iraytest.intersectionpoint, iraytest.PtoP);
+            PVector pt1Origin = new PVector (iraytest.PtoP.p1.x,iraytest.PtoP.p1.y,
+                                             iraytest.PtoP.p1.z);
+            PVector pt2Origin = new PVector (iraytest.PtoP.p2.x,iraytest.PtoP.p2.y,
+                                             iraytest.PtoP.p2.z);
+            pt1Origin.sub(disk.origin);
+            pt2Origin.sub(disk.origin);
+            SPRcoord sprcoord1 = sphericalCRotation(disk.origin, pt1Origin);
+            SPRcoord sprcoord2 = sphericalCRotation(disk.origin, pt2Origin.);
+            line sprl = new line(sprcoord1.pt, sprcoord2.pt);
+            DiskLineTest dltest = new DiskLineTest(disk, sprl, sprcoord1, sprcoord2);
+            lineToDiskIntersect(dltest);
+            if (dltest.intersect >= 0){
+            }
+            
           }
         }
         else{
@@ -391,7 +487,106 @@ void rayTester(Disk disk, Disk disk2,
   }
 }
 
-void planePlaneIntersection(){
+void planePlaneIntersection(Disk disk, Disk disk2, PVector ipt, line out){
+  PVector iptc = new PVector(ipt.x, ipt.y, ipt.z);
+  PVector N1 = sphericalToC(disk.origin);
+  PVector N2 = sphericalToC(disk2.origin);
+  N1.normalize();
+  N2.normalize();
+  PVector N1c = new PVector(N1.x,N1.y,N1.z);
+  PVector N2c = new PVector(N2.x,N2.y,N2.z);
+  PVector N1c2 = new PVector(N1.x,N1.y,N1.z);
+  PVector N2c2 = new PVector(N2.x,N2.y,N2.z);
+  Float d1 = N1.dot(iptc);
+  Float d2 = N2.dot(iptc);
+  Float det = (N1.dot(N1))*(N2.dot(N2))-(pow(N1.dot(N2),2));
+  Float c1 = (d1*(N2.dot(N2))-d2*(N1.dot(N2)))/det;
+  Float c2 = (d2*(N1.dot(N1))-d1*(N1.dot(N2)))/det;
+  out.p1.x = ipt.x;
+  out.p1.y = ipt.y;
+  out.p1.z = ipt.z;
+  PVector ipt2 = ((N1c.mult(c1)).add(N2c.mult(c2))).add((N1c2.cross(N2c2)).mult(1.75432));
+  //arbitrarily chosen u line parameter chosen above 1.75432
+  out.p2.x = ipt2.x;
+  out.p2.y = ipt2.y;
+  out.p2.z = ipt2.z;
+}
+
+SPRcoord sphericalCRotation(PVector spcoord, PVector pt){
+  //Rotating coordinate system to match a given disk
+  //This is a theta quaternion z rotation followed by a phi quaternion x' rotation.
+  // + pi/2.0 radians 
+    Float theta = spcoord.y;
+    Float phi = spcoord.z;
+    phi -= PI/2.0;
+    PVector z = new PVector(0.0,0.0,1.0);
+    PVector y = new PVector(0.0,1.0,0.0);
+    PVector pointprime = Qrotate(pt, z, theta);
+    PVector Basisyprime = Qrotate(y, z, theta);
+    PVector pointdprime = Qrotate(pointprime, Basisyprime, phi);
+    return new SPRcoord(pointdprime, Basisyprime, spcoord);
+    
+}
+
+PVector revSphericalCRotation(SPRcoord sprcoord){
+  //this rotates from a double prime coordinate system back into the original coordinate
+  //system.
+  Float theta = -sprcoord.spcoord.y;
+  Float phi = -sprcoord.spcoord.z;
+  phi += PI/2.0;
+  //Quaternion rotations done in reverse order for a double prime to non prime conversion
+  PVector Basisyprime = sprcoord.byprime;
+  PVector pointdprime = new PVector(sprcoord.pt.x, sprcoord.pt.y, sprcoord.pt.z);
+  PVector pointprime = Qrotate(pointdprime, Basisyprime, phi);
+  PVector z = new PVector(0.0,0.0,1.0);
+  PVector point = Qrotate(pointprime, z, theta);
+  return point;
+  
+}
+void lineToDiskIntersect(DiskLineTest dltest){
+  Disk disk = dltest.disk;
+  Float R = dltest.disk.r;
+  PVector corigin = sphericalToC(disk.origin);
+  //translate dltest l coordinates to the disk center as a point of origin
+  // this is for http://mathworld.wolfram.com/Circle-LineIntersection.html
+  // formulation where the coordinate origin is the circle center at (0,0)
+  line l = dltest.l;
+  PVector p1 = new PVector(l.p1.x, l.p1.y, l.p1.z);
+  PVector p2 = new PVector(l.p2.x, l.p2.y, l.p2.z);
+  p1.sub(corigin);
+  p2.sub(corigin);
+  Float dx = p2.x - p1.x;
+  Float dy = p2.y - p1.y;
+  Float dr = pow((dx*dx+dy*dy),.5);
+  Float D = p1.x*p2.y - p2.x*p1.y;
+  Float Delta = R*R*dr*dr -D*D;
+  if (Delta == 0){
+    dltest.intersect = 1;
+  }
+  else if (Delta > 0){
+    dltest.intersect = 2;
+  }
+  else if (Delta < 0){
+    dltest.intersect = 0;
+  }
+  Float s1 = 1.0;
+  if (dy < 0){
+    s1 = -1.0;
+  }
+  Float x1 = (D*dy+s1*dx*pow((R*R*dr*dr - D*D),.5))/(dr*dr);
+  Float x2 = (D*dy-s1*dx*pow((R*R*dr*dr - D*D),.5))/(dr*dr);
+  Float y1 = (-D*dx+abs(dy)*pow((R*R*dr*dr-D*D),.5))/(dr*dr);
+  Float y2 = (-D*dx-abs(dy)*pow((R*R*dr*dr-D*D),.5))/(dr*dr);
+  PVector ipt1dp = new PVector(x1, y1, 0.0);
+  PVector ipt2dp = new PVector(x2, y2, 0.0);
+  //  PVector byprime;  //yprime basis
+  //PVector spcoord;  // rotation angles
+  SPRcoord spript1 = new SPRcoord(ipt1dp, dltest.sprcoord1.byprime, 
+                                  dltest.sprcoord1.spcoord);
+  SPRcoord spript2 = new SPRcoord(ipt2dp, dltest.sprcoord1.byprime, 
+                                  dltest.sprcoord1.spcoord);
+  PVector ipt1 = revSphericalCRotation(spript1);
+  PVector ipt2 = revSphericalCRotation(spript2);
 }
 
 ArrayList<Disk> disks = new ArrayList<Disk>();

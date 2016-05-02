@@ -411,6 +411,7 @@ void stopRayInitialization(Disk disk, Disk disk2, ArrayList<PVector> rays,
           else{
             raytest.intersectionpoints.set(i, iraytest.intersectionpoint);
             planePlaneIntersection(disk, disk2, iraytest.intersectionpoint, iraytest.PtoP);
+            raytest.PtoPs.add(iraytest.PtoP);
             PVector pt1Origin = new PVector (iraytest.PtoP.p1.x,iraytest.PtoP.p1.y,
                                              iraytest.PtoP.p1.z);
             PVector pt2Origin = new PVector (iraytest.PtoP.p2.x,iraytest.PtoP.p2.y,
@@ -418,11 +419,30 @@ void stopRayInitialization(Disk disk, Disk disk2, ArrayList<PVector> rays,
             pt1Origin.sub(disk.origin);
             pt2Origin.sub(disk.origin);
             SPRcoord sprcoord1 = sphericalCRotation(disk.origin, pt1Origin);
-            SPRcoord sprcoord2 = sphericalCRotation(disk.origin, pt2Origin.);
+            SPRcoord sprcoord2 = sphericalCRotation(disk.origin, pt2Origin);
             line sprl = new line(sprcoord1.pt, sprcoord2.pt);
             DiskLineTest dltest = new DiskLineTest(disk, sprl, sprcoord1, sprcoord2);
             lineToDiskIntersect(dltest);
-            if (dltest.intersect >= 0){
+            PVector pt1Origin2 = new PVector (iraytest.PtoP.p1.x,iraytest.PtoP.p1.y,
+                                             iraytest.PtoP.p1.z);
+            PVector pt2Origin2 = new PVector (iraytest.PtoP.p2.x,iraytest.PtoP.p2.y,
+                                             iraytest.PtoP.p2.z);
+            pt1Origin2.sub(disk2.origin);
+            pt2Origin2.sub(disk2.origin);
+            SPRcoord sprcoord12 = sphericalCRotation(disk2.origin, pt1Origin2);
+            SPRcoord sprcoord22 = sphericalCRotation(disk2.origin, pt2Origin2);
+            line sprl2 = new line(sprcoord12.pt, sprcoord22.pt);
+            DiskLineTest dltest2 = new DiskLineTest(disk2, sprl2, sprcoord12, sprcoord22);
+            lineToDiskIntersect(dltest2);
+            Boolean t1 = dltest.intersect >= 0;
+            Boolean t2 = dltest2.intersect >= 0;
+            if (t1 && t2){
+              DiskDiskTest dskdsktest = new DiskDiskTest(disk, disk2, dltest.intersectsegment, 
+                                                         dltest2.intersectsegment);
+              DiskDiskIntersection(dskdsktest);
+              if (dskdsktest.intersect >= 0){
+                raytest.intersectSegments.add(dskdsktest.intersectsegment);
+              }
             }
             
           }
@@ -518,7 +538,7 @@ SPRcoord sphericalCRotation(PVector spcoord, PVector pt){
   // + pi/2.0 radians 
     Float theta = spcoord.y;
     Float phi = spcoord.z;
-    phi -= PI/2.0;
+    phi += PI/2.0;
     PVector z = new PVector(0.0,0.0,1.0);
     PVector y = new PVector(0.0,1.0,0.0);
     PVector pointprime = Qrotate(pt, z, theta);
@@ -533,7 +553,7 @@ PVector revSphericalCRotation(SPRcoord sprcoord){
   //system.
   Float theta = -sprcoord.spcoord.y;
   Float phi = -sprcoord.spcoord.z;
-  phi += PI/2.0;
+  phi -= PI/2.0;
   //Quaternion rotations done in reverse order for a double prime to non prime conversion
   PVector Basisyprime = sprcoord.byprime;
   PVector pointdprime = new PVector(sprcoord.pt.x, sprcoord.pt.y, sprcoord.pt.z);
@@ -553,8 +573,8 @@ void lineToDiskIntersect(DiskLineTest dltest){
   line l = dltest.l;
   PVector p1 = new PVector(l.p1.x, l.p1.y, l.p1.z);
   PVector p2 = new PVector(l.p2.x, l.p2.y, l.p2.z);
-  p1.sub(corigin);
-  p2.sub(corigin);
+  //p1.sub(corigin);
+  //p2.sub(corigin);
   Float dx = p2.x - p1.x;
   Float dy = p2.y - p1.y;
   Float dr = pow((dx*dx+dy*dy),.5);
@@ -587,6 +607,63 @@ void lineToDiskIntersect(DiskLineTest dltest){
                                   dltest.sprcoord1.spcoord);
   PVector ipt1 = revSphericalCRotation(spript1);
   PVector ipt2 = revSphericalCRotation(spript2);
+  ipt1.add(corigin);
+  ipt2.add(corigin);
+  dltest.intersectsegment = new line(ipt1,ipt2);
+}
+
+void DiskDiskIntersection(DiskDiskTest diskdisktest){
+    //DiskDiskTest(Disk Disk1, Disk Disk2, line Iseg1, line Iseg2)
+    //this disk to disk intersection test only works in the simplified case that
+    // disk1 and disk2 are the same radius.  
+    //3 cases either disk1 and disk2 are matched at the same center of origin
+    // in which case the disk line intersections are matched
+    //  or 1 value of the disk line intersection is less than r and another greater than
+    // r, or both values greater than r both disks intersect the same plane to plane 
+    // intersection, but they are varied enough on such intersection 
+    // that their line segments do not intersect.  Draw two circle intercepting 
+    // the plane to plane intersection but have it that the center of such disks 
+    // is about an origin such that the vector between both such origins is greater 
+    // than r.
+    Disk disk1 = diskdisktest.disk1;
+    Disk disk2 = diskdisktest.disk2;
+    line line1 = diskdisktest.iseg1;
+    line line2 = diskdisktest.iseg2;
+    PVector dorigin = new PVector(disk1.origin.x, disk1.origin.y, disk1.origin.z);
+    PVector p1 = new PVector(line2.p1.x, line2.p1.y, line2.p1.z);
+    PVector p2 = new PVector(line2.p2.x, line2.p2.y, line2.p2.z);
+    PVector p1a = new PVector(line2.p1.x, line2.p1.y, line2.p1.z);
+    PVector p2a = new PVector(line2.p2.x, line2.p2.y, line2.p2.z);
+    PVector p1b = new PVector(line2.p1.x, line2.p1.y, line2.p1.z);
+    PVector p2b = new PVector(line2.p2.x, line2.p2.y, line2.p2.z);
+    p1.sub(dorigin);
+    p2.sub(dorigin);
+    boolean t1 = p1.mag() <= disk1.r;
+    boolean t2 = p2.mag() <= disk1.r;
+    if (t1 || t2){
+      diskdisktest.intersect = 1;
+      if (p1.mag() < p2.mag()){
+        p2a.sub(p1a);
+        p2a.normalize();
+        p2a.mult(disk1.r);
+        p2a.add(dorigin);
+        diskdisktest.intersectsegment = new line(p2b, p2a);
+      }
+      else{
+        p1a.sub(p2a);
+        p1a.normalize();
+        p1a.mult(disk1.r);
+        p1a.add(dorigin);
+        diskdisktest.intersectsegment = new line(p1b, p1a);
+      }
+      if (t1 && t2){
+        diskdisktest.intersect = 2;
+        diskdisktest.intersectsegment = new line(p1b, p2b);
+      }
+    }
+    else{
+      diskdisktest.intersect = 0;
+    }
 }
 
 ArrayList<Disk> disks = new ArrayList<Disk>();
@@ -725,17 +802,29 @@ void draw(){
         if (stopt){
           
           PVector ep = raytest.intersectionpoints.get(k);
-          if (ep.x != sp.x && ep.y != sp.y){
-            line(sp.x,sp.y,sp.z, ep.x,ep.y,ep.z);
-              textSize(5);
-              text("Ray "+ String.valueOf(i)+ " "+ j.toString()+ " "+ String.valueOf(k),
-                  ep.x,ep.y,ep.z);
-                  fill(255);
+          //if (ep.x != sp.x && ep.y != sp.y){
+          //  line(sp.x,sp.y,sp.z, ep.x,ep.y,ep.z);
+          //    textSize(5);
+          //    text("Ray "+ String.valueOf(i)+ " "+ j.toString()+ " "+ String.valueOf(k),
+          //        ep.x,ep.y,ep.z);
+          //        fill(255);
+          //}
+          for (line l : raytest.intersectSegments){
+           line(l.p1.x,l.p1.y,l.p1.z,l.p2.x,l.p2.y,l.p2.z);
+          }
+          for (line m : raytest.PtoPs){
+            line(m.p1.x,m.p1.y,m.p1.z,m.p2.x,m.p2.y,m.p2.z);
           }
         }
         else{
           PVector ep = raytest.currentPoints.get(k);
-          line(sp.x,sp.y,sp.z, ep.x,ep.y,ep.z);
+          //line(sp.x,sp.y,sp.z, ep.x,ep.y,ep.z);
+          //for (line l : raytest.intersectSegments){
+          //  line(l.p1.x,l.p1.y,l.p1.z,l.p2.x,l.p2.y,l.p2.z);
+          //}
+          for (line m : raytest.PtoPs){
+            line(m.p1.x,m.p1.y,m.p1.z,m.p2.x,m.p2.y,m.p2.z);
+          }
         }
         k += 1;
       }

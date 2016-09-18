@@ -1,0 +1,60 @@
+//parameters
+
+float MaximumParticles = 320;  //120-170 excellent
+float diffParticleVelocity = .0001;
+float minParticleVelocity = .001f;
+float minParticleSize = 0.1f;
+float maxParticleSize = 20.0f;
+float minScale = .02f;
+float maxScale = 12.0f;
+float turbulence = .7f;
+float maxparticleLifetime = 100.0f;  //1.0f excellent  10.0f max 30.0f min
+float minparticleLifetime = 30.0f;  // 4.0f excellent  //30.0f min 100.0f max slower
+float particleStrength = 2.0f;   //2.0f excellent
+float minstrength =.1f;   //.1 excellent
+float tstart = 0.0f;
+float tstop = 1.0f;
+int glowRadius = 6;
+boolean glowing = true;
+boolean randomP3 = false;
+float minRandomt3 = .95f;
+float glowdampening = 5f;  //1.4 - 2.5 excellent
+float glowRaddiv = 375.0f;  //300 - 400.0f dampening on glow radius alpha
+
+
+//parameters 2
+float MaximumParticles = 300;  //120-170 excellent
+float diffParticleVelocity = .01;
+float minParticleVelocity = .07f;
+float minParticleSize = 0.1f;
+float maxParticleSize = 20.0f;
+float minScale = 0.01f;
+float maxScale = 15.0f;
+float turbulence = 0.0f;
+float maxparticleLifetime = 100.0f;  //1.0f excellent  10.0f max 30.0f min
+float minparticleLifetime = 1.0f;  // 4.0f excellent  //30.0f min 100.0f max slower
+float particleStrength = 2.0f;   //2.0f excellent
+float minstrength =.1f;   //.1 excellent
+float tstart = .8f;
+float tstop = 1.0f;
+int glowRadius = 8;
+boolean glowing = true;
+boolean randomP3 = false;
+float minRandomt3 = .95f;
+float glowdampening = 2.4f;  //1.4 - 2.5 excellent
+float glowRaddiv = 400.0f;  //300 - 400.0f dampening on glow radius alpha
+boolean oturb = true;
+PVector oturbvec = new PVector(0.0,0.0,0.0);
+PVector oturbvec2 = new PVector(0.0,0.0,0.0);
+PVector oturbvec3 = new PVector(0.0,0.0,0.0);
+float oturbfac_x = 0.0f;
+float oturbfac_y = 0.0f;
+float oturbfac2_x = 0.0f;
+float oturbfac2_y = 1.0f;
+float oturbfac3_x = 0.2;
+float oturbfac3_y = 2.0f;
+boolean oturb_random = false;
+boolean cyclic_dampening = true;
+float oturb_frequency = .2f;
+boolean flowField = true;
+boolean flowFieldrandomStart = false;

@@ -36,3 +36,15 @@ rendering a substring bezier curve from (0,1) but instead approximates a new cur
 control point from the old bezier curve data at parameter t3 and then randomly assigns a value random (0,t3) for t2
 which is then applied yet again in computing t1 by random(0,t2)  and so forth.  This produces a distinct bezier curve
 from the original bezier curve data and thus adds more randomness into the system.  
+
+In version 3 of the Flame Animation3 script, the following variables have been added:
+boolean oturb  which is overall turbulence or uniform turbulence to the system of particles.  
+PVector oturbvec, PVector oturbvec2, and PVector oturbvec3 are instanced globally for oturbulence data.
+float oturbfac_x, float oturbfac_y = 0.0f, float oturbfac2_x = 0.0f, float oturbfac2_y = 1.0f
+float oturbfac3_x = 0.2, float oturbfac3_y = 2.0f
+are used in determining random oturbulence data
+boolean oturb_random  or random oturbulence.  Otherwise oturbfac(123)_xy are applied explictly in setting oturbvectors.  random overall turbulence is less controlled in so far as shifts and movements and is considered step wise completely random.  The other case is non random and periodic in nature with dampening designed into the system.
+boolean cyclic_dampening  applying cyclic dampening which aids in randomizing more periodic turbulence with oturb random not set true.  An exponential function is used in dampening periodic amplitude with modulus applied in supplying the periodic portion of the dampening component. 
+float oturb_frequency is a value set in determing the rate of periodic oturbulence
+boolean flowField this sets whether flow particle strands grow in length from some start point to a given endpoint.
+boolean flowFieldrandomStart whether or not the flow particles start at some randomly defined position.

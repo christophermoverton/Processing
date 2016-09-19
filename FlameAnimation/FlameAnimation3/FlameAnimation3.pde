@@ -1,5 +1,5 @@
 ParticleSystem ps;
-float MaximumParticles = 300;  //120-170 excellent
+float MaximumParticles = 500;  //120-170 excellent
 float diffParticleVelocity = .01;
 float minParticleVelocity = .07f;
 float minParticleSize = 0.1f;
@@ -7,9 +7,9 @@ float maxParticleSize = 20.0f;
 float minScale = 0.01f;
 float maxScale = 15.0f;
 float turbulence = 0.0f;
-float maxparticleLifetime = 100.0f;  //1.0f excellent  10.0f max 30.0f min
-float minparticleLifetime = 1.0f;  // 4.0f excellent  //30.0f min 100.0f max slower
-float particleStrength = 2.0f;   //2.0f excellent
+float maxparticleLifetime = 110.0f;  //1.0f excellent  10.0f max 30.0f min
+float minparticleLifetime = 40.0f;  // 4.0f excellent  //30.0f min 100.0f max slower
+float particleStrength = 1.4f;   //2.0f excellent
 float minstrength =.1f;   //.1 excellent
 float tstart = .8f;
 float tstop = 1.0f;
@@ -17,8 +17,8 @@ int glowRadius = 8;
 boolean glowing = true;
 boolean randomP3 = false;
 float minRandomt3 = .95f;
-float glowdampening = 2.4f;  //1.4 - 2.5 excellent
-float glowRaddiv = 400.0f;  //300 - 400.0f dampening on glow radius alpha
+float glowdampening = 1.5f;  //1.4 - 2.5 excellent
+float glowRaddiv = 425.0f;  //300 - 400.0f dampening on glow radius alpha
 boolean oturb = true;
 PVector oturbvec = new PVector(0.0,0.0,0.0);
 PVector oturbvec2 = new PVector(0.0,0.0,0.0);
@@ -78,7 +78,7 @@ void draw() {
     oturbvec3.y = cdamp*oturbfac3_y*cos(oturb_frequency*t);
   }
   ps.run();
-  filter(BLUR, .5);
+  filter(BLUR, .4);
   t+=1;
   //filter(DILATE);
   //saveFrame();
@@ -296,7 +296,7 @@ class Particle {
       for(int i = 0; i <= glowRadius; i++){
         noFill();
         strokeWeight(i*glowdampening);
-        stroke(200*(1-.1*float(i)/glowRadius),200*(1-.1*float(i)/glowRadius),255,255.0*(1-float(i)/glowRadius)*(float(i)/glowRaddiv));
+        stroke(255*(1-.1*float(i)/glowRadius),255*(1-.1*float(i)/glowRadius),255,255.0*(1-float(i)/glowRadius)*(float(i)/glowRaddiv));
 
         if (flowField){
           bezier(origin.x+P0.x,origin.y+P0.y,origin.x+P4.x,origin.y+P4.y,

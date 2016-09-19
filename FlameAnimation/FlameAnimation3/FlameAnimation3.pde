@@ -11,7 +11,7 @@ float maxparticleLifetime = 110.0f;  //1.0f excellent  10.0f max 30.0f min
 float minparticleLifetime = 40.0f;  // 4.0f excellent  //30.0f min 100.0f max slower
 float particleStrength = 1.4f;   //2.0f excellent
 float minstrength =.1f;   //.1 excellent
-float tstart = .8f;
+float tstart = 0.0f;
 float tstop = 1.0f;
 int glowRadius = 8;
 boolean glowing = true;
@@ -34,6 +34,14 @@ boolean cyclic_dampening = true;
 float oturb_frequency = .2f;
 boolean flowField = true;
 boolean flowFieldrandomStart = false;
+float cptx = 1.25f;
+PVector[][] controlPointsArr = {{new PVector(4.0,0.0,0.0), new PVector(5.0,4.0,0.0), 
+                                 new PVector(3.47,7.5,0.0), new PVector(.3,10.0,0.0)},
+                               {new PVector(cptx,0.0,0.0), new PVector(cptx*2.0/3.0, 10.0/3.0, 0.0), 
+                                new PVector(cptx*1.0/3.0, 10.0*2.0/3.0, 0.0), 
+                                new PVector(0.0,10.0)}};
+boolean[] resampleStart = {false, true};
+float[] density = {1.0,.7f};
 
 //control point data P0 (4,0)
 //control point data P1 (5,4)
@@ -107,7 +115,12 @@ class ParticleSystem {
   }
 
   void addParticle() {
-    particles.add(new Particle(origin));
+    int i = 0;
+    for (PVector[] cpts: controlPointsArr){
+      if (i>0){if(random(0.0,1.0)<density[i]){break;}}
+      particles.add(new Particle(origin,cpts,resampleStart[i]));
+      i+=1;
+    }
   }
 
   void run() {
@@ -152,7 +165,7 @@ class Particle {
     t=t%1;
   }
 
-  Particle(PVector l) {
+  Particle(PVector l, PVector[] controlPts, Boolean reSampleStart) {
     acceleration = new PVector(0,0.05);
     velocity = new PVector(random(-1,1),random(1,2));
     location = l.copy();
@@ -168,13 +181,19 @@ class Particle {
     else{
       t = tstart;
     }
+    
     //control point data P0 (4,0)
     //control point data P1 (5,4)
     //P2 (3.47,7.5)
     //P3 (0,10)
     scale = random(minScale, maxScale);
     float rval1 = random(0,1);
+    P0 = controlPts[0].copy();
+    P1 = controlPts[1].copy();
+    P2 = controlPts[2].copy();
+    P3 = controlPts[3].copy();
     if (rval1 > .5){
+     /*
     P0 = new PVector(4.0,0.0,0.0);
     P1 = new PVector(5.0,4.0,0.0);
     P2 = new PVector(3.47,7.5,0.0);
@@ -186,8 +205,22 @@ class Particle {
     P2 = new PVector(-3.47,7.5,0.0);
     P3 = new PVector(0.0,10.0,0.0);
     }
+    */
+      P0.x *= -1.0f;
+      P1.x *= -1.0f;
+      P2.x *= -1.0f;
+      P3.x *= -1.0f;
+    }
+
     P0.mult(scale); P1.mult(scale); P2.mult(scale);
     P3.mult(scale);
+    if (reSampleStart){
+      PVector[] reP = resampleCurve(new PVector[] {P0,P1,P2,P3}, tstart, tstop);
+      P0 = reP[0].copy();
+      P1 = reP[1].copy();
+      P2 = reP[2].copy();
+      P3 = reP[3].copy();
+    }
     //P0a.mult(scale); P1a.mult(scale); P2a.mult(scale);
     //P3a.mult(scale);
     PVector c1 = bezierCurve(P0, P1, P2, P3, t);
@@ -325,6 +358,21 @@ class Particle {
     
   }
   
+  PVector[] resampleCurve(PVector[] cpts, float tStart, float tEnd){
+    float t0 = tStart;
+    float tdiff = tEnd-tStart;
+    float t1 = tStart+tdiff*1.0/3.0;
+    float t2 = tStart+tdiff*2.0/3.0;
+    float t3 = tEnd;
+    float[] tarr = {t0,t1,t2,t3};
+    PVector[] rCurve = new PVector[4];
+    int i = 0;
+    for (float ti: tarr){
+       rCurve[i] = bezierCurve(cpts[0], cpts[1], cpts[2], cpts[3], ti);
+       i+=1;
+    }
+    return rCurve;
+  }
   // Is the particle still useful?
   boolean isDead() {
     if (lifespan < 0.0) {

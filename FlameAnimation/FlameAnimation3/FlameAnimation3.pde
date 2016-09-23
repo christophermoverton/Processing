@@ -89,7 +89,7 @@ void draw() {
   filter(BLUR, .4);
   t+=1;
   //filter(DILATE);
-  //saveFrame();
+  saveFrame();
 }
 
 PVector bezierCurve(PVector P0, PVector P1, PVector P2, PVector P3, float t){
@@ -159,6 +159,7 @@ class Particle {
   PVector P6;
   PVector origin;
   float strength;
+  PVector[] ControlPts;
   
   void Stept(){
     t+=tstep;
@@ -192,6 +193,7 @@ class Particle {
     P1 = controlPts[1].copy();
     P2 = controlPts[2].copy();
     P3 = controlPts[3].copy();
+    ControlPts = controlPts;
     if (rval1 > .5){
      /*
     P0 = new PVector(4.0,0.0,0.0);
@@ -232,6 +234,120 @@ class Particle {
       float t3 = random(minRandomt3,1);
       float t2 = random(0,t3);
       float t1 = random(0,t2);
+      P1 = bezierCurve(P0,P1,P2,P3,t1);
+      P2 = bezierCurve(P0,P1,P2,P3,t2);
+      P3 = bezierCurve(P0,P1,P2,P3,t3);
+    }
+    /*
+    if (random(0,1) > .5){
+      float rval = c1.x;
+      location.y += c1.y;
+      location.x += random(0,rval);
+    }
+    else{
+      float rval = c2.x;
+      location.y += c2.y;
+      location.x += random(rval,0);
+    }
+    */
+    lifespan = random(minparticleLifetime,maxparticleLifetime)/velocity.mag();
+    PVector loc = location.copy();
+    /*
+    if ((loc.sub(l.copy())).mag() > 5){
+      
+      redval = random(0,255);
+    
+      greenval = random(0,255);
+      blueval = random(200,255);
+    }
+    else{
+      redval = random(200,255);
+    
+      greenval = random(0,10);
+      blueval = random(0,30);
+    }
+    */
+    PVector colval = new PVector(scale/10.0f*255.0f,200.0f, (1.0f-scale/10.0f)*255.0f);
+    redval = colval.x;
+    greenval = colval.y;
+    blueval = colval.z;
+    size = random(minParticleSize,maxParticleSize);
+    strength = random(minstrength,particleStrength);
+  }
+
+  Particle(PVector l, PVector[][] controlPtsarr) {
+    //merge control points on the array
+    acceleration = new PVector(0,0.05);
+    velocity = new PVector(random(-1,1),random(1,2));
+    location = l.copy();
+    origin = l.copy();
+    tstep = random(minParticleVelocity,  minParticleVelocity+diffParticleVelocity);
+    //float rval = random(1,20);
+    //location.y += rval;
+    //generate random parameter t 0 to 1
+    if (flowFieldrandomStart){
+      
+      t = random(tstart,tstop);
+    }
+    else{
+      t = tstart;
+    }
+    
+    //control point data P0 (4,0)
+    //control point data P1 (5,4)
+    //P2 (3.47,7.5)
+    //P3 (0,10)
+    scale = random(minScale, maxScale);
+    float rval1 = random(0,1);
+    PVector[] spts = new PVector[controlPtsarr.length];
+    int i = 0;
+    for (PVector[] cPts: controlPtsarr){
+      spts[i] = cPts[3].copy();
+      i+=1;
+    }
+    bezierSplineMerge(controlPtsarr, spts);
+
+    ControlPts = controlPts;
+    if (rval1 > .5){
+
+
+      for (PVector[] cpts: controlPtsarr){
+        cpts[0].x *= -1.0f;
+        cpts[1].x *= -1.0f;
+        cpts[2].x *= -1.0f;
+        cpts[3].x *= -1.0f;
+      }
+    }
+    for (PVector[] cpts: controlPtsarr){
+      for (PVector Pvec: cpts){
+        Pvec.mult(scale);
+      }
+    }
+    //P0.mult(scale); P1.mult(scale); P2.mult(scale);
+    //P3.mult(scale);
+    if (resampleStart[0]){
+      PVector[] reP = resampleCurve(controlPtsarr[0], tstart, tstop);
+      controlPtsarr[0][0] = reP[0].copy();
+      controlPtsarr[0][1] = reP[1].copy();
+      controlPtsarr[0][2] = reP[2].copy();
+      controlPtsarr[0][3] = reP[3].copy();
+    }
+    //P0a.mult(scale); P1a.mult(scale); P2a.mult(scale);
+    //P3a.mult(scale);
+    PVector c1 = bezierCurve(controlPtsarr[0][0], controlPtsarr[0][1],
+                             controlPtsarr[0][2], controlPtsarr[0][3], t);
+    //PVector c2 = bezierCurve(P0a, P1a, P2a, P3a, t);
+    location.y = c1.y + origin.y;
+    location.x = c1.x + origin.x;
+    if (randomP3){
+      //get three random control points greater than P0
+      float t3 = random(minRandomt3,1);
+      float t2 = random(0,t3);
+      float t1 = random(0,t2);
+      P0 = controlPtsarr[0][0];
+      P1 = controlPtsarr[0][1];
+      P2 = controlPtsarr[0][2];
+      P3 = controlPtsarr[0][3];
       P1 = bezierCurve(P0,P1,P2,P3,t1);
       P2 = bezierCurve(P0,P1,P2,P3,t2);
       P3 = bezierCurve(P0,P1,P2,P3,t3);
@@ -373,6 +489,51 @@ class Particle {
     }
     return rCurve;
   }
+  
+  void bezierSplineMerge(PVector[] cpts, PVector[] spts){
+    int i = 0;
+    //merge spts 
+    for (PVector spt: spts){
+      if (i==0){continue;}
+      spts[i].x += spts[i-1].x;
+      spts[i].y += spts[i-1].y;
+      spts[i].z += spts[i-1].z;
+      i+=1;
+    }
+    i=0;
+    for (PVector spt: spts){
+      for (int j = i*4; j < (i+1)*4-1; j++){
+         cpts[j].x += spts[j].x;
+         cpts[j].y += spts[j].y;
+         cpts[j].z += spts[j].z;
+      }
+      i+=1;
+    }
+  }
+  
+    void bezierSplineMerge(PVector[][] cptsArr, PVector[] spts){
+    int i = 0;
+    //merge spts 
+    for (PVector spt: spts){
+      if (i==0){continue;}
+      spts[i].x += spts[i-1].x;
+      spts[i].y += spts[i-1].y;
+      spts[i].z += spts[i-1].z;
+      i+=1;
+    }
+    i=1;
+    for (PVector spt: spts){
+         PVector[] cpts = cptsArr[i-1];
+         for(PVector cpt: cpts){
+           cpt.x += spt.x;
+           cpt.y += spt.y;
+           cpt.z += spt.z;
+         }
+         i+=1;
+     }
+      
+  }
+  
   // Is the particle still useful?
   boolean isDead() {
     if (lifespan < 0.0) {
